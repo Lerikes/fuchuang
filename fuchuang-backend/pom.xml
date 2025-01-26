@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.fuchuang</groupId>
+    <artifactId>fuchuang-backend</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <description>
+        服务创新大赛后端服务
+    </description>
+
+    <developers>
+        <!-- yr -->
+        <developer>
+            <name>袁睿</name>
+            <email>14780339727@163.com</email>
+            <url>https://github.com/yrlovejava</url>
+        </developer>
+
+        <!-- lyy -->
+    </developers>
+
+    <properties>
+        <java.version>17</java.version>
+        <spotless-maven-plugin.version>2.22.1</spotless-maven-plugin.version>
+        <skip.checkstyle.check>true</skip.checkstyle.check>
+        <maven-common-plugin.version>3.1.0</maven-common-plugin.version>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <lombok.version>1.18.30</lombok.version>
+    </properties>
+
+</project>
