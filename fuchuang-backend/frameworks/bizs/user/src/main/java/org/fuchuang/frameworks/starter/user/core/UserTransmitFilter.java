@@ -20,18 +20,13 @@ public class UserTransmitFilter implements Filter {
         String userId = httpServletRequest.getHeader(UserConstant.USER_ID_KEY);
         if(StringUtils.hasText(userId)) {
             String userName = httpServletRequest.getHeader(UserConstant.USER_NAME_KEY);
-            String realName = httpServletRequest.getHeader(UserConstant.REAL_NAME_KEY);
             if(StringUtils.hasText(userName)) {
                 userName = URLDecoder.decode(userName, StandardCharsets.UTF_8);
-            }
-            if(StringUtils.hasText(realName)) {
-                realName = URLDecoder.decode(realName, StandardCharsets.UTF_8);
             }
             String token = httpServletRequest.getHeader(UserConstant.USER_TOKEN_KEY);
             UserInfoDTO userInfoDTO = UserInfoDTO.builder()
                     .userId(userId)
                     .username(userName)
-                    .realName(realName)
                     .token(token)
                     .build();
             UserContext.setUser(userInfoDTO);

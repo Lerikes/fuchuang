@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.fuchuang.framework.starter.bases.constant.UserConstant.*;
+
 /**
  * JWT 工具类
  */
@@ -21,7 +23,7 @@ public final class JWTUtil {
 
     private static final long EXPIRATION = 86400L;
     public static final String TOKEN_PREFIX = "Bearer ";
-    public static final String ISS = "index12306";
+    public static final String ISS = "fuchuang";
     public static final String SECRET = "SecretKey039245678901232039487623456783092349288901402967890140939827";
 
     /**
@@ -33,7 +35,6 @@ public final class JWTUtil {
         Map<String,Object> customerUserMap = new HashMap<>();
         customerUserMap.put(USER_ID_KEY, userInfo.getUserId());
         customerUserMap.put(USER_NAME_KEY, userInfo.getUsername());
-        customerUserMap.put(REAL_NAME_KEY, userInfo.getRealName());
         String jwtToken = Jwts.builder()
                 .signWith(SignatureAlgorithm.HS512,SECRET)
                 .setIssuedAt(new Date())
