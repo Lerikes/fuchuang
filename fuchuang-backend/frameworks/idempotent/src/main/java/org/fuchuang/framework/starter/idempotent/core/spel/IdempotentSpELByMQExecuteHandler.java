@@ -2,7 +2,6 @@ package org.fuchuang.framework.starter.idempotent.core.spel;
 
 import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.idempotent.annotation.Idempotent;
-import com.squirrel.index12306.framework.starter.idempotent.core.*;
 import org.fuchuang.framework.starter.idempotent.core.*;
 import org.fuchuang.framework.starter.idempotent.enums.IdempotentMQConsumeStatusEnum;
 import org.fuchuang.framework.starter.idempotent.toolkit.LogUtil;
