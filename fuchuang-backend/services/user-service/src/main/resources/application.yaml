@@ -27,6 +27,7 @@ spring:
     host: smtp.163.com
     username: 13678035977@163.com
     password: MVAOQFOCWGYGFPYV
+    default-encoding: UTF-8
 
 mybatis-plus:
   global-config:

@@ -204,7 +204,8 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
 
         // 对邮箱加锁，防止并发注册
-        RLock registerLock = redissonClient.getLock(RedisKeyConstant.USER_REGISTER_LOCK + email);
+        String lockKey = RedisKeyConstant.USER_REGISTER_LOCK + email;
+        RLock registerLock = redissonClient.getLock(lockKey);
         boolean tryLock = registerLock.tryLock();
         if (!tryLock) {
             // 出现并发注册，返回错误信息
@@ -212,7 +213,9 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
         try {
             // 校验验证码是否正确
-            String code = this.getEmailVerifyCode(email);
+            String codeKey = RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email;
+            StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+            String code =  stringRedisTemplate.opsForValue().get(codeKey);
             if (code == null) {
                 throw new ClientException(UserRegisterErrorCodeEnum.CODE_NOTNULL);
             }
@@ -237,9 +240,16 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                     .password(passwordWithMd5)
                     .username(username)
                     .build();
-            // 将用户信息插入数据库
+
             try {
+                // 将用户信息插入数据库
                 save(user);
+
+                // 删除redis中验证码
+                stringRedisTemplate.delete(codeKey);
+
+                // 将用户邮箱添加到布隆过滤器中，防止缓存穿透
+                userRegisterCachePenetrationBloomFilter.add(email);
             } catch (Exception e) {
                 log.error("注册信息插入错误，注册信息：{}", requestParam);
                 throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
@@ -256,17 +266,6 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      */
     private boolean existsAccountByEmail(String email){
         return this.baseMapper.exists(Wrappers.<UserDO>query().eq("email", email));
-    }
-
-    /**
-     * 获取Redis中存储的邮件验证码
-     * @param email 电邮
-     * @return 验证码
-     */
-    private String getEmailVerifyCode(String email){
-        String key = RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email;
-        StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
-        return stringRedisTemplate.opsForValue().get(key);
     }
 
     /**
