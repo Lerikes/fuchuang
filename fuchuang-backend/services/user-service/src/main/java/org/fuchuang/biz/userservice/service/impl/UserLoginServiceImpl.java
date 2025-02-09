@@ -3,12 +3,12 @@ package org.fuchuang.biz.userservice.service.impl;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
-import cn.hutool.extra.validation.ValidationUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
+import org.fuchuang.biz.userservice.common.constant.UserConstant;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
@@ -69,8 +69,7 @@ public class UserLoginServiceImpl implements UserLoginService {
         // 判断是验证码还是密码
         int loginType = requestParam.getLoginType();
         UserDO userDO;
-        // todo: 替换为常量
-        if (loginType == 0) {
+        if (loginType == UserConstant.USER_LOGIN_TYPE_PASSWORD) {
             // 密码登录
             // 参数校验
             if (StrUtil.isBlank(requestParam.getPassword())) {

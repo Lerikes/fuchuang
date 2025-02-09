@@ -31,4 +31,14 @@ public class UserConstant {
      * 用户名最大长度
      */
     public static final int PASSWORD_MAX_LENGTH = 20;
+
+    /**
+     * 使用密码登录
+     */
+    public static final Integer USER_LOGIN_TYPE_PASSWORD = 0;
+
+    /**
+     * 使用验证码登录
+     */
+    public static final Integer USER_LOGIN_TYPE_CODE = 1;
 }
