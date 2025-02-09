@@ -44,3 +44,8 @@ framework:
   cache:
     redis:
       value-timeout: 50000
+
+register:
+  verify-code:
+    limit: 1
+    ttl: 60

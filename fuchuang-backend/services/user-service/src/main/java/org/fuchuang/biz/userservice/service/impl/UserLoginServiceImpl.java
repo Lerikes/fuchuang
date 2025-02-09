@@ -53,6 +53,10 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+    @Value("${register.verify-code.limit}")
+    private Integer verifyCodeLimit;
+    @Value("${register.verify-code.ttl}")
+    private Integer verifyCodeTtl;
 
     /**
      * 用户登录
@@ -153,8 +157,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 构造key
         String key = RedisKeyConstant.USER_SEND_CODE_LIMIT + email;
         // 限流
-        // todo: 改为可配置
-        doRateLimit(key, 1, 60, "验证码发送过于频繁，请稍后再试");
+        doRateLimit(key, verifyCodeLimit, verifyCodeTtl, "验证码发送过于频繁，请稍后再试");
 
         // 发送验证码
         // todo: 使用MQ
@@ -170,7 +173,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         MailUtil.sendMail(javaMailSender, fromEmail, email, process, true);
 
         // 在redis中保存
-        distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
 
         return true;
     }
@@ -276,7 +279,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      * @param ttl     指定时间 单位秒
      * @param message 限流的提示信息
      */
-    public void doRateLimit(String key, int limit, int ttl, String message) {
+    private void doRateLimit(String key, int limit, int ttl, String message) {
         // 创建限流器
         RRateLimiter rateLimiter = redissonClient.getRateLimiter(key);
         rateLimiter.trySetRate(RateType.OVERALL, limit,
