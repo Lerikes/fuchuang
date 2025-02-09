@@ -1,0 +1,13 @@
+server:
+  port: 9000
+spring:
+  application:
+    name: fuchuang-gateway-service
+  profiles:
+    #active: aggregation
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 139.159.224.143:8848
+        namespace: 57e33dd1-7ee1-41c2-ad57-45186ee6be9b
