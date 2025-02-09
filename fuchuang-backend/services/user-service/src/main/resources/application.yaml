@@ -19,6 +19,13 @@ spring:
       discovery:
         server-addr: 139.159.224.143:8848
         namespace: 57e33dd1-7ee1-41c2-ad57-45186ee6be9b
+  mail:
+    host: smtp.163.com # 配置 smtp 服务器地址
+    port: 465 # smtp 服务器的端口 http 25   https 465
+    username: 14780339727@163.com # 配置邮箱用户名(你的邮箱地址)
+    password:  EDZMXQBOCGNGVJAT # 配置申请到的授权码(刚让复制的授权码)
+    default-encoding: UTF-8 # 配置邮件编码
+
 
 mybatis-plus:
   global-config:
