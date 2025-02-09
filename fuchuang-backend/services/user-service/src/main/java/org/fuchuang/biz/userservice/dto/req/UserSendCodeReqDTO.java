@@ -13,6 +13,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "用户登录发送验证码请求参数")
 public class UserSendCodeReqDTO {
+    /**
+     * 申请验证码类型，1：登录 2：注册 0：重置
+     */
+    @Schema(description = "申请类型")
+    private int type;
 
     /**
      * 邮箱
