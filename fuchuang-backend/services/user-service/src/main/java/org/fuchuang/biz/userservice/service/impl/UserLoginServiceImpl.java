@@ -1,8 +1,8 @@
 package org.fuchuang.biz.userservice.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.DigestUtil;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +18,8 @@ import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -99,11 +101,40 @@ public class UserLoginServiceImpl implements UserLoginService {
         // 生成token
         String accessToken = JWTUtil.generateAccessToken(userInfoDTO);
 
-        // 返回响应
-        return UserLoginRespDTO.builder()
+        // 构造响应
+        UserLoginRespDTO actual = UserLoginRespDTO.builder()
                 .userId(String.valueOf(userDO.getId()))
                 .username(userDO.getUsername())
                 .accessToken(accessToken)
                 .build();
+
+        // 保存信息到到redis
+        distributedCache.put(accessToken, JSON.toJSONString(actual), 30, TimeUnit.MINUTES);
+
+        // 返回响应
+        return actual;
+    }
+
+    /**
+     * 验证登录
+     *
+     * @param accessToken 用户登录 Token 凭证
+     * @return 验证登录返回结果
+     */
+    @Override
+    public UserLoginRespDTO checkLogin(String accessToken) {
+        return distributedCache.get(accessToken, UserLoginRespDTO.class);
+    }
+
+    /**
+     * 登出操作
+     *
+     * @param accessToken 用户登录 Token 凭证
+     */
+    @Override
+    public void logout(String accessToken) {
+        if (StrUtil.isNotBlank(accessToken)) {
+            distributedCache.delete(accessToken);
+        }
     }
 }
