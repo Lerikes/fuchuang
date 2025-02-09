@@ -22,6 +22,12 @@ public class UserRegisterReqDTO {
     private String password;
 
     /**
+     * 重复密码
+     */
+    @Schema(description = "重复密码")
+    private String repeatedPassword;
+
+    /**
      * 邮箱
      */
     @Email

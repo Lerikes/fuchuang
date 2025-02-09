@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
 import org.fuchuang.biz.userservice.common.constant.UserConstant;
+import org.fuchuang.biz.userservice.common.enums.UserChainMarkEnum;
 import org.fuchuang.biz.userservice.common.enums.UserRegisterErrorCodeEnum;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
@@ -22,6 +23,7 @@ import org.fuchuang.biz.userservice.toolkit.MailUtil;
 import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
+import org.fuchuang.framework.starter.designpattern.chain.AbstractChainContext;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
@@ -50,6 +52,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
+    private final AbstractChainContext<UserRegisterReqDTO> abstractChainContext;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -184,27 +187,11 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      */
     @Override
     public void register(UserRegisterReqDTO requestParam) {
-        // todo 使用责任链模式做校验
-        // 校验参数
-        if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) ||
-               StrUtil.isBlank(requestParam.getPassword())) {
-            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
-        }
+        // 责任链做校验
+        abstractChainContext.handler(UserChainMarkEnum.USER_REGISTER_FILTER.name(),requestParam);
 
-        // 获取用户传入注册信息
         String email = requestParam.getEmail();
-        String password = requestParam.getPassword();
         String phone = requestParam.getPhone();
-
-        // 布隆过滤器校验邮箱是否存在，解决缓存穿透问题
-        if (userRegisterCachePenetrationBloomFilter.contains(email)) {
-            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
-        }
-
-        // 校验密码是否合法
-        if (password.length() < UserConstant.PASSWORD_MIN_LENGTH || password.length() > UserConstant.PASSWORD_MAX_LENGTH) {
-            throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
-        }
 
         // 对邮箱加锁，防止并发注册
         String lockKey = RedisKeyConstant.USER_REGISTER_LOCK + email;
@@ -226,14 +213,12 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 throw new ClientException(UserRegisterErrorCodeEnum.CODE_ILLEGAL);
             }
             // 校验邮箱是否已经注册
-            if (this.existsAccountByEmail(email)) {
-                throw new ClientException(UserRegisterErrorCodeEnum.MAIL_REGISTERED);
-            }
+
             // 注册用户
             // 随机生成 6 位长度的盐
             String salt = RandomUtil.randomString(UserConstant.SALT_LENGTH);
             // 对密码进行加密
-            String passwordWithMd5 = DigestUtil.md5Hex((password + salt).getBytes());
+            String passwordWithMd5 = DigestUtil.md5Hex((requestParam.getPassword() + salt).getBytes());
             // 生成用户名
             String username = "user" + RandomUtil.randomNumbers(8);
             UserDO user = UserDO.builder()
@@ -267,8 +252,10 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      * @param email 邮箱
      * @return 是否存在
      */
-    private boolean existsAccountByEmail(String email){
-        return this.baseMapper.exists(Wrappers.<UserDO>query().eq("email", email));
+    @Override
+    public boolean hasEmail(String email){
+        // 查询布隆过滤器是否存在
+        return userRegisterCachePenetrationBloomFilter.contains(email);
     }
 
     /**
