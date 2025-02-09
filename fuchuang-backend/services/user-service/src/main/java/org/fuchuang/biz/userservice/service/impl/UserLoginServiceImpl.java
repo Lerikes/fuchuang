@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
+import org.fuchuang.biz.userservice.common.constant.UserConstant;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
@@ -170,7 +171,13 @@ public class UserLoginServiceImpl implements UserLoginService {
         MailUtil.sendMail(javaMailSender, fromEmail, email, process, true);
 
         // 在redis中保存
-        distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        if (requestParam.getType() == UserConstant.LOGIN_TYPE) {
+            distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        } else if (requestParam.getType() == UserConstant.REGISTER_TYPE) {
+            distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        } else {
+            distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        }
 
         return true;
     }

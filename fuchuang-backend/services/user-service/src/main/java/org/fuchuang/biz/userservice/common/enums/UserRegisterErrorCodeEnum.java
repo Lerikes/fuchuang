@@ -39,9 +39,13 @@ public enum UserRegisterErrorCodeEnum implements IErrorCode {
 
     TELEPHONE_NOTNULL("A006013", "固定电话不能为空"),
 
-    VERIFY_STATE_NOTNULL("A006014", "审核状态不能为空"),
+    CODE_ILLEGAL("A006014", "验证码有误"),
 
-    REAL_NAME_NOTNULL("A006015", "真实姓名不能为空");
+    CODE_NOTNULL("A006015", "验证码不能为空"),
+
+    EMAIL_ILLEGAL("A006016", "邮箱号不合法"),
+
+    PASSWORD_ILLEGAL("A006016", "密码长度必须在5~20位之间");
 
     /**
      * 错误码
