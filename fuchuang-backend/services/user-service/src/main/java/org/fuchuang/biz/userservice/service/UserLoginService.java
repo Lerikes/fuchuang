@@ -1,6 +1,7 @@
 package org.fuchuang.biz.userservice.service;
 
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 
@@ -21,6 +22,12 @@ public interface UserLoginService {
      * @param requestParam 发送验证码请求参数
      */
     boolean sendVerifyCode(UserSendCodeReqDTO requestParam);
+
+    /**
+     * 用户注册
+     * @param requestParam 用户注册参数
+     */
+    void register(UserRegisterReqDTO requestParam);
 
     /**
      * 通过 Token 检查用户是否登录

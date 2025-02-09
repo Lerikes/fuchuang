@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
@@ -39,6 +40,16 @@ public class UserLoginController {
     @PostMapping("/api/user-service/v1/send-verify-code")
     public Result<Boolean> sendVerifyCode(@RequestBody UserSendCodeReqDTO requestParam) {
         return Results.success(userLoginService.sendVerifyCode(requestParam));
+    }
+
+    /**
+     * 用户注册
+     */
+    @Operation(summary = "用户注册")
+    @PostMapping("/api/user-service/v1/register")
+    public Result<Void> register(@RequestBody UserRegisterReqDTO requestParam) {
+        userLoginService.register(requestParam);
+        return Results.success();
     }
 
     /**

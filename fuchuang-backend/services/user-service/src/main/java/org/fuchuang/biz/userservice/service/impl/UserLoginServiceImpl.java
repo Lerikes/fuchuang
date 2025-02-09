@@ -5,13 +5,16 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
 import org.fuchuang.biz.userservice.common.constant.UserConstant;
+import org.fuchuang.biz.userservice.common.enums.UserRegisterErrorCodeEnum;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
@@ -21,10 +24,7 @@ import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
-import org.redisson.api.RRateLimiter;
-import org.redisson.api.RateIntervalUnit;
-import org.redisson.api.RateType;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -42,13 +42,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserLoginServiceImpl implements UserLoginService {
+public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserLoginService{
 
     private final UserMapper userMapper;
     private final DistributedCache distributedCache;
     private final RedissonClient redissonClient;
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
+    private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -172,6 +173,100 @@ public class UserLoginServiceImpl implements UserLoginService {
         distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
 
         return true;
+    }
+
+    /**
+     * 用户注册
+     * @param requestParam 用户注册参数
+     */
+    @Override
+    public void register(UserRegisterReqDTO requestParam) {
+        // todo 使用责任链模式做校验
+        // 校验参数
+        if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) ||
+               StrUtil.isBlank(requestParam.getPassword())) {
+            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
+        }
+
+        // 获取用户传入注册信息
+        String email = requestParam.getEmail();
+        String password = requestParam.getPassword();
+        String phone = requestParam.getPhone();
+
+        // 布隆过滤器校验邮箱是否存在，解决缓存穿透问题
+        if (userRegisterCachePenetrationBloomFilter.contains(email)) {
+            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
+        }
+
+        // 校验密码是否合法
+        if (password.length() < UserConstant.PASSWORD_MIN_LENGTH || password.length() > UserConstant.PASSWORD_MAX_LENGTH) {
+            throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
+        }
+
+        // 对邮箱加锁，防止并发注册
+        RLock registerLock = redissonClient.getLock(RedisKeyConstant.USER_REGISTER_LOCK + email);
+        boolean tryLock = registerLock.tryLock();
+        if (!tryLock) {
+            // 出现并发注册，返回错误信息
+            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
+        }
+        try {
+            // 校验验证码是否正确
+            String code = this.getEmailVerifyCode(email);
+            if (code == null) {
+                throw new ClientException(UserRegisterErrorCodeEnum.CODE_NOTNULL);
+            }
+            if (!code.equals(requestParam.getCode())) {
+                throw new ClientException(UserRegisterErrorCodeEnum.CODE_ILLEGAL);
+            }
+            // 校验邮箱是否已经注册
+            if (this.existsAccountByEmail(email)) {
+                throw new ClientException(UserRegisterErrorCodeEnum.MAIL_REGISTERED);
+            }
+            // 注册用户
+            // 随机生成 6 位长度的盐
+            String salt = RandomUtil.randomString(UserConstant.SALT_LENGTH);
+            // 对密码进行加密
+            String passwordWithMd5 = DigestUtil.md5Hex((password + salt).getBytes());
+            // 生成用户名
+            String username = "user" + RandomUtil.randomNumbers(8);
+            UserDO user = UserDO.builder()
+                    .email(email)
+                    .phoneNumber(phone)
+                    .salt(salt)
+                    .password(passwordWithMd5)
+                    .username(username)
+                    .build();
+            // 将用户信息插入数据库
+            try {
+                save(user);
+            } catch (Exception e) {
+                log.error("注册信息插入错误，注册信息：{}", requestParam);
+                throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
+            }
+        } finally {
+            registerLock.unlock();
+        }
+    }
+
+    /**
+     * 查询指定邮箱的用户是否已经存在
+     * @param email 邮箱
+     * @return 是否存在
+     */
+    private boolean existsAccountByEmail(String email){
+        return this.baseMapper.exists(Wrappers.<UserDO>query().eq("email", email));
+    }
+
+    /**
+     * 获取Redis中存储的邮件验证码
+     * @param email 电邮
+     * @return 验证码
+     */
+    private String getEmailVerifyCode(String email){
+        String key = RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email;
+        StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+        return stringRedisTemplate.opsForValue().get(key);
     }
 
     /**
