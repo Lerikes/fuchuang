@@ -2,6 +2,7 @@ package org.fuchuang.biz.userservice.service;
 
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 
@@ -48,4 +49,10 @@ public interface UserLoginService {
      * @param accessToken 用户登录 Token 凭证
      */
     void logout(String accessToken);
+
+    /**
+     * 用户信息修改
+     * @param requestParam 用户修改信息参数
+     */
+    void userInfoUpdate(UserResetReqDTO requestParam);
 }

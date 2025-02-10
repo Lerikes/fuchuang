@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
@@ -69,6 +70,16 @@ public class UserLoginController {
     @GetMapping("/api/user-service/logout")
     public Result<Void> logout(@RequestParam(required = false) String accessToken) {
         userLoginService.logout(accessToken);
+        return Results.success();
+    }
+
+    /**
+     * 用户信息修改
+     */
+    @Operation(summary = "用户信息修改")
+    @GetMapping("/api/user-service/v1/update")
+    public Result<Void> updateUserInfo(@RequestBody UserResetReqDTO requestParam) {
+        userLoginService.userInfoUpdate(requestParam);
         return Results.success();
     }
 }

@@ -16,6 +16,7 @@ import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
 import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
+import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
 import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
@@ -24,9 +25,11 @@ import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
 import org.fuchuang.framework.starter.designpattern.chain.AbstractChainContext;
+import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -70,7 +73,8 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     @Override
     public UserLoginRespDTO login(UserLoginReqDTO requestParam) {
         // 参数校验
-        if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) || requestParam.getLoginType() == null || requestParam.getLoginType() < 0 || requestParam.getLoginType() > 2) {
+        if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) ||
+                requestParam.getLoginType() == null || requestParam.getLoginType() < 0 || requestParam.getLoginType() > 2) {
             throw new ClientException("参数有误");
         }
 
@@ -306,5 +310,74 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         if (StrUtil.isNotBlank(accessToken)) {
             distributedCache.delete(accessToken);
         }
+    }
+
+    /**
+     * 用户信息修改
+     * @param requestParam 用户修改信息参数
+     */
+    @Override
+    public void userInfoUpdate(UserResetReqDTO requestParam) {
+        // 校验参数
+        if (requestParam == null || requestParam.getEmail() == null ||
+                requestParam.getUsername() == null || requestParam.getOldPassword() == null || requestParam.getNewPassword() == null) {
+            throw new ClientException("参数不能为空！");
+        }
+
+        // 1 获取用户信息判断是否登录
+        // 1.1 ThreadLocal获取用户id
+        String userId = UserContext.getUserId();
+        // 1.2 校验用户id是否为空
+        if (userId == null) {
+            throw new ClientException("请先登录！");
+        }
+        // 1.3 检验用户id是否存在
+        UserDO user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new ClientException("用户不存在！");
+        }
+
+        // 2 校验修改信息是否合法
+        // 2.1 用户名长度
+        if (requestParam.getUsername().length() > UserConstant.PASSWORD_MAX_LENGTH || requestParam.getUsername().length() < UserConstant.PASSWORD_MIN_LENGTH) {
+            throw new ClientException("用户名要在5~20位之间！");
+        }
+
+        // 2.2 旧密码是否正确
+        // 加盐比对，规则是 原始密码 + salt 再bcrypt哈希
+        String getPassword = DigestUtil.md5Hex((requestParam.getOldPassword() + user.getSalt()));
+        if (!getPassword.equals(user.getPassword())) {
+            throw new ClientException("密码错误！");
+        }
+        // 2.3 新密码是否合法
+        if (requestParam.getNewPassword().length() > UserConstant.PASSWORD_MAX_LENGTH || requestParam.getNewPassword().length() < UserConstant.PASSWORD_MIN_LENGTH) {
+            throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
+        }
+        // 2.4 新密码和旧密码是否一致
+        if (!requestParam.getOldPassword().equals(requestParam.getNewPassword())) {
+            throw new ClientException("新旧密码不一致！");
+        }
+        if ((requestParam.getNewPassword() + user.getSalt()).equals(user.getPassword())) {
+            throw new ClientException("新密码不能与旧密码相同！");
+
+        }
+
+        // 3 更新用户信息
+        // 3.1 更新数据库
+        distributedCache.delete(userId);
+        UserDO updateUser = UserDO.builder()
+                .email(requestParam.getEmail())
+                .username(requestParam.getUsername())
+                .password(getPassword)
+                .build();
+        updateUser.setId(Long.valueOf(userId));
+        try {
+            userMapper.updateById(updateUser);
+        } catch (Exception e) {
+            log.error("用户信息更新失败：{}", e.getMessage());
+            throw new ClientException("个人信息更新失败！");
+        }
+        // TODO redis和mysql一致性保持(采用哪种处理方式)
+
     }
 }
