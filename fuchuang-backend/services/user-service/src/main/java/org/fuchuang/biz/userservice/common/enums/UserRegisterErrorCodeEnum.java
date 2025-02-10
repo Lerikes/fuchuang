@@ -35,17 +35,19 @@ public enum UserRegisterErrorCodeEnum implements IErrorCode {
 
     ADDRESS_NOTNULL("A006012", "地址不能为空"),
 
-    REGION_NOTNULL("A006012", "国家/地区不能为空"),
+    REGION_NOTNULL("A006013", "国家/地区不能为空"),
 
-    TELEPHONE_NOTNULL("A006013", "固定电话不能为空"),
+    TELEPHONE_NOTNULL("A006014", "固定电话不能为空"),
 
-    CODE_ILLEGAL("A006014", "验证码有误"),
+    CODE_ILLEGAL("A006015", "验证码有误"),
 
-    CODE_NOTNULL("A006015", "验证码不能为空"),
+    CODE_NOTNULL("A006016", "验证码不能为空"),
 
     EMAIL_ILLEGAL("A006016", "邮箱号不合法"),
 
-    PASSWORD_ILLEGAL("A006016", "密码长度必须在5~20位之间");
+    PASSWORD_ILLEGAL("A006017", "密码长度必须在5~20位之间"),
+
+    PASSWORD_NOT_MATCH("A006018", "两次输入密码不一致");
 
     /**
      * 错误码

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
 import org.fuchuang.biz.userservice.common.constant.UserConstant;
+import org.fuchuang.biz.userservice.common.enums.UserChainMarkEnum;
 import org.fuchuang.biz.userservice.common.enums.UserRegisterErrorCodeEnum;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
@@ -22,6 +23,7 @@ import org.fuchuang.biz.userservice.toolkit.MailUtil;
 import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
+import org.fuchuang.framework.starter.designpattern.chain.AbstractChainContext;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
@@ -50,9 +52,14 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
+    private final AbstractChainContext<UserRegisterReqDTO> abstractChainContext;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+    @Value("${register.verify-code.limit}")
+    private Integer verifyCodeLimit;
+    @Value("${register.verify-code.ttl}")
+    private Integer verifyCodeTtl;
 
     /**
      * 用户登录
@@ -62,7 +69,6 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      */
     @Override
     public UserLoginRespDTO login(UserLoginReqDTO requestParam) {
-        log.info("登录参数：{}", requestParam);
         // 参数校验
         if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) || requestParam.getLoginType() == null || requestParam.getLoginType() < 0 || requestParam.getLoginType() > 2) {
             throw new ClientException("参数有误");
@@ -154,8 +160,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 构造key
         String key = RedisKeyConstant.USER_SEND_CODE_LIMIT + email;
         // 限流
-        // todo: 改为可配置
-        doRateLimit(key, 1, 60, "验证码发送过于频繁，请稍后再试");
+        doRateLimit(key, verifyCodeLimit, verifyCodeTtl, "验证码发送过于频繁，请稍后再试");
 
         // 发送验证码
         // todo: 使用MQ
@@ -170,14 +175,15 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 调用工具类发送
         MailUtil.sendMail(javaMailSender, fromEmail, email, process, true);
 
-        // 在redis中根据不同状态码保存验证码
+        // 在redis中保存
         if (requestParam.getType() == UserConstant.LOGIN_TYPE) {
-            distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+            distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
         } else if (requestParam.getType() == UserConstant.REGISTER_TYPE) {
-            distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+            distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
         } else {
-            distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+            distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
         }
+
 
         return true;
     }
@@ -188,30 +194,15 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      */
     @Override
     public void register(UserRegisterReqDTO requestParam) {
-        // todo 使用责任链模式做校验
-        // 校验参数
-        if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) ||
-               StrUtil.isBlank(requestParam.getPassword())) {
-            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
-        }
+        // 责任链做校验
+        abstractChainContext.handler(UserChainMarkEnum.USER_REGISTER_FILTER.name(),requestParam);
 
-        // 获取用户传入注册信息
         String email = requestParam.getEmail();
-        String password = requestParam.getPassword();
         String phone = requestParam.getPhone();
 
-        // 布隆过滤器校验邮箱是否存在，解决缓存穿透问题
-        if (userRegisterCachePenetrationBloomFilter.contains(email)) {
-            throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
-        }
-
-        // 校验密码是否合法
-        if (password.length() < UserConstant.PASSWORD_MIN_LENGTH || password.length() > UserConstant.PASSWORD_MAX_LENGTH) {
-            throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
-        }
-
         // 对邮箱加锁，防止并发注册
-        RLock registerLock = redissonClient.getLock(RedisKeyConstant.USER_REGISTER_LOCK + email);
+        String lockKey = RedisKeyConstant.USER_REGISTER_LOCK + email;
+        RLock registerLock = redissonClient.getLock(lockKey);
         boolean tryLock = registerLock.tryLock();
         if (!tryLock) {
             // 出现并发注册，返回错误信息
@@ -219,7 +210,9 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
         try {
             // 校验验证码是否正确
-            String code = this.getEmailVerifyCode(email);
+            String codeKey = RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email;
+            StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+            String code =  stringRedisTemplate.opsForValue().get(codeKey);
             if (code == null) {
                 throw new ClientException(UserRegisterErrorCodeEnum.CODE_NOTNULL);
             }
@@ -227,14 +220,12 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 throw new ClientException(UserRegisterErrorCodeEnum.CODE_ILLEGAL);
             }
             // 校验邮箱是否已经注册
-            if (this.existsAccountByEmail(email)) {
-                throw new ClientException(UserRegisterErrorCodeEnum.MAIL_REGISTERED);
-            }
+
             // 注册用户
             // 随机生成 6 位长度的盐
             String salt = RandomUtil.randomString(UserConstant.SALT_LENGTH);
             // 对密码进行加密
-            String passwordWithMd5 = DigestUtil.md5Hex((password + salt).getBytes());
+            String passwordWithMd5 = DigestUtil.md5Hex((requestParam.getPassword() + salt).getBytes());
             // 生成用户名
             String username = "user" + RandomUtil.randomNumbers(8);
             UserDO user = UserDO.builder()
@@ -244,9 +235,16 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                     .password(passwordWithMd5)
                     .username(username)
                     .build();
-            // 将用户信息插入数据库
+
             try {
-                userMapper.insert(user);
+                // 将用户信息插入数据库
+                save(user);
+
+                // 删除redis中验证码
+                stringRedisTemplate.delete(codeKey);
+
+                // 将用户邮箱添加到布隆过滤器中，防止缓存穿透
+                userRegisterCachePenetrationBloomFilter.add(email);
             } catch (Exception e) {
                 log.error("注册信息插入错误，注册信息：{}", requestParam);
                 throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
@@ -261,19 +259,10 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      * @param email 邮箱
      * @return 是否存在
      */
-    private boolean existsAccountByEmail(String email){
-        return this.baseMapper.exists(Wrappers.<UserDO>query().eq("email", email));
-    }
-
-    /**
-     * 获取Redis中存储的邮件验证码
-     * @param email 电邮
-     * @return 验证码
-     */
-    private String getEmailVerifyCode(String email){
-        String key = RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email;
-        StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
-        return stringRedisTemplate.opsForValue().get(key);
+    @Override
+    public boolean hasEmail(String email){
+        // 查询布隆过滤器是否存在
+        return userRegisterCachePenetrationBloomFilter.contains(email);
     }
 
     /**
@@ -284,7 +273,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      * @param ttl     指定时间 单位秒
      * @param message 限流的提示信息
      */
-    public void doRateLimit(String key, int limit, int ttl, String message) {
+    private void doRateLimit(String key, int limit, int ttl, String message) {
         // 创建限流器
         RRateLimiter rateLimiter = redissonClient.getRateLimiter(key);
         rateLimiter.trySetRate(RateType.OVERALL, limit,

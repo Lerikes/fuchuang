@@ -37,6 +37,13 @@ public interface UserLoginService {
     UserLoginRespDTO checkLogin(String accessToken);
 
     /**
+     * 检查email是否存在
+     * @param email 邮箱
+     * @return 是否存在
+     */
+    boolean hasEmail(String email);
+
+    /**
      * 用户退出登录
      * @param accessToken 用户登录 Token 凭证
      */
