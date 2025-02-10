@@ -243,6 +243,15 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 // 将用户信息插入数据库
                 save(user);
 
+                // 将用户信息保存在redis中
+                // 先处理密码,手机号和盐
+                user.setPassword("");
+                user.setPhoneNumber("");
+                user.setSalt("");
+                // todo: key前缀改成常量，关注大key问题
+                // todo: 三个对缓存的操作应该保证原子性，使用lua脚本做改造
+                stringRedisTemplate.opsForValue().set("fuchuang:user-service:user:" + user.getId(), JSON.toJSONString(user), 30, TimeUnit.DAYS);
+
                 // 删除redis中验证码
                 stringRedisTemplate.delete(codeKey);
 
@@ -363,7 +372,8 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
 
         // 3 更新用户信息
         // 3.1先删除缓存
-        distributedCache.delete(userId);
+        // todo key前缀改成常量
+        distributedCache.delete("fuchuang:user-service:user:" + userId);
         // 3.2再更新数据库
         UserDO updateUser = UserDO.builder()
                 .email(requestParam.getEmail())
