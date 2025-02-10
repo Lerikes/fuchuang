@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/base/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/base/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/bizs/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/bizs/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/bizs/user/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/bizs/user/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/cache/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/cache/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/common/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/convention/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/convention/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/database/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/database/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/designpattern/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/designpattern/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/distributedid/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/distributedid/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/idempotent/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/idempotent/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/log/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/log/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/web/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/frameworks/web/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/gateway-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/gateway-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/user-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fuchuang-backend/services/user-service/src/main/resources" charset="UTF-8" />
+  </component>
+</project>

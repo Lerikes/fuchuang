@@ -62,6 +62,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
      */
     @Override
     public UserLoginRespDTO login(UserLoginReqDTO requestParam) {
+        log.info("登录参数：{}", requestParam);
         // 参数校验
         if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) || requestParam.getLoginType() == null || requestParam.getLoginType() < 0 || requestParam.getLoginType() > 2) {
             throw new ClientException("参数有误");
@@ -169,8 +170,14 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 调用工具类发送
         MailUtil.sendMail(javaMailSender, fromEmail, email, process, true);
 
-        // 在redis中保存
-        distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        // 在redis中根据不同状态码保存验证码
+        if (requestParam.getType() == UserConstant.LOGIN_TYPE) {
+            distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        } else if (requestParam.getType() == UserConstant.REGISTER_TYPE) {
+            distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        } else {
+            distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, 60, TimeUnit.SECONDS);
+        }
 
         return true;
     }
@@ -239,7 +246,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                     .build();
             // 将用户信息插入数据库
             try {
-                save(user);
+                userMapper.insert(user);
             } catch (Exception e) {
                 log.error("注册信息插入错误，注册信息：{}", requestParam);
                 throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
