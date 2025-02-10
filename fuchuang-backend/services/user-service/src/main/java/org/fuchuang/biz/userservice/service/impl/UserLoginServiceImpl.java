@@ -29,7 +29,6 @@ import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
