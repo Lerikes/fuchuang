@@ -333,7 +333,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 1 获取用户信息判断是否登录
         // 1.1 ThreadLocal获取用户id
         String userId = UserContext.getUserId();
-        // todo 这里的校验交给网关做
+        // 这里的校验交给网关做
         // 1.2 校验用户id是否为空
         if (StrUtil.isBlank(userId)) {
             throw new ClientException("请先登录！");

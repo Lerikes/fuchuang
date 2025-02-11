@@ -12,3 +12,4 @@ spring:
                 blackPathPre:
                   - /api/user-service/logout
                   - /api/user-service/deletion
+                  - /api/user-service/v1/user
