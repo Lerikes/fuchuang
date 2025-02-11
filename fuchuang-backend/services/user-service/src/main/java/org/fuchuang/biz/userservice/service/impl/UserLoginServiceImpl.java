@@ -14,10 +14,7 @@ import org.fuchuang.biz.userservice.common.enums.UserChainMarkEnum;
 import org.fuchuang.biz.userservice.common.enums.UserRegisterErrorCodeEnum;
 import org.fuchuang.biz.userservice.dao.entity.UserDO;
 import org.fuchuang.biz.userservice.dao.mapper.UserMapper;
-import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
+import org.fuchuang.biz.userservice.dto.req.*;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
 import org.fuchuang.biz.userservice.toolkit.MailUtil;
@@ -183,8 +180,12 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
         } else if (requestParam.getType() == UserConstant.REGISTER_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
-        } else {
+        } else if (requestParam.getType() == UserConstant.RESET_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
+        } else if (requestParam.getType() == UserConstant.FORGET_PASSWORD_TYPE) {
+            distributedCache.put(RedisKeyConstant.USER_FORGET_PASSWORD_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
+        } else {
+            throw new ClientException("参数有误");
         }
 
 
@@ -335,6 +336,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 1 获取用户信息判断是否登录
         // 1.1 ThreadLocal获取用户id
         String userId = UserContext.getUserId();
+        // todo 这里的校验交给网关做
         // 1.2 校验用户id是否为空
         if (StrUtil.isBlank(userId)) {
             throw new ClientException("请先登录！");
@@ -361,6 +363,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         if (requestParam.getNewPassword().length() > UserConstant.PASSWORD_MAX_LENGTH || requestParam.getNewPassword().length() < UserConstant.PASSWORD_MIN_LENGTH) {
             throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
         }
+        // todo 重新梳理一下逻辑
         // 2.4 新密码和旧密码是否一致
         if (!requestParam.getOldPassword().equals(requestParam.getNewPassword())) {
             throw new ClientException("新旧密码不一致！");
@@ -389,5 +392,66 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
         // TODO redis和mysql一致性保持(采用哪种处理方式)
 
+    }
+
+    /**
+     * 用户忘记密码
+     * @param requestParam 忘记密码请求参数
+     */
+    @Override
+    public void forgetPassword(UserForgetPasswordReqDTO requestParam) {
+        // 参数校验
+        if(requestParam == null || StrUtil.isBlank(requestParam.getEmail()) || StrUtil.isBlank(requestParam.getCode()) ||
+                StrUtil.isBlank(requestParam.getOldPassword()) || StrUtil.isBlank(requestParam.getNewPassword())){
+            throw new ClientException("参数不能为空！");
+        }
+
+        // 验证旧密码
+        // 从数据库中查询用户信息(redis中的没有密码)
+        UserDO userDO = userMapper.selectOne(Wrappers.<UserDO>lambdaQuery().eq(UserDO::getEmail, requestParam.getEmail()));
+        if (userDO == null) {
+            throw new ClientException("用户不存在！");
+        }
+        String oldPassword = requestParam.getOldPassword();
+        String oldPasswordWithMD5 = DigestUtil.md5Hex(oldPassword + userDO.getSalt());
+        if (!oldPasswordWithMD5.equals(userDO.getPassword())) {
+            throw new ClientException("旧密码错误！");
+        }
+
+        // 防御性编程，校验新旧密码是否一致
+        String newPassword = requestParam.getNewPassword();
+        if (oldPassword.equals(newPassword)) {
+            throw new ClientException("新密码不能与旧密码相同！");
+        }
+
+        // 验证新密码是否合法
+        if (newPassword.length() > UserConstant.PASSWORD_MAX_LENGTH || newPassword.length() < UserConstant.PASSWORD_MIN_LENGTH) {
+            throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
+        }
+
+        // 验证验证码
+        // 从redis中获取验证码
+        String codeKey = RedisKeyConstant.USER_FORGET_PASSWORD_VERIFY_CODE + requestParam.getEmail();
+        StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+        String code = stringRedisTemplate.opsForValue().get(codeKey);
+        if (StrUtil.isBlank(code)) {
+            throw new ClientException("验证码已过期！");
+        }
+        if (!code.equals(requestParam.getCode())) {
+            throw new ClientException("验证码错误！");
+        }
+
+        // 更新密码
+        String newPasswordWithMD5 = DigestUtil.md5Hex(newPassword + userDO.getSalt());
+        UserDO updateUser = UserDO.builder()
+                .id(userDO.getId())
+                .password(newPasswordWithMD5)
+                .build();
+        try {
+            userMapper.updateById(updateUser);
+        }catch (Exception e) {
+            log.error("用户密码更新失败：{}", e.getMessage());
+            throw new ServiceException("密码更新失败！");
+        }
     }
 }

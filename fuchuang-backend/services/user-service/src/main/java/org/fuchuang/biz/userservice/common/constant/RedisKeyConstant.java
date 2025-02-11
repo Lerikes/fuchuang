@@ -21,6 +21,11 @@ public final class RedisKeyConstant {
     public static final String USER_RESET_VERIFY_CODE = "fuchuang-user-service:reset:user-verifyCode:";
 
     /**
+     * 用户忘记密码验证码，Key Prefix + email
+     */
+    public static final String USER_FORGET_PASSWORD_VERIFY_CODE = "fuchuang-user-service:forgetPassword:user-verifyCode:";
+
+    /**
      * 用户发送验证码限流，Key Prefix + email
      */
     public static final String USER_SEND_CODE_LIMIT = "fuchuang-user-service:limit:sendCode:";
