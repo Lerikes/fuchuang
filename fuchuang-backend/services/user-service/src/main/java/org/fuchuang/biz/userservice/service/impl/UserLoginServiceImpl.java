@@ -249,7 +249,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 user.setPassword("");
                 user.setPhoneNumber("");
                 user.setSalt("");
-                // todo: key前缀改成常量，关注大key问题
+                // todo: key前缀改成常量
                 // todo: 三个对缓存的操作应该保证原子性，使用lua脚本做改造
                 stringRedisTemplate.opsForValue().set("fuchuang:user-service:user:" + user.getId(), JSON.toJSONString(user), 30, TimeUnit.DAYS);
 
@@ -402,28 +402,11 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     public void forgetPassword(UserForgetPasswordReqDTO requestParam) {
         // 参数校验
         if(requestParam == null || StrUtil.isBlank(requestParam.getEmail()) || StrUtil.isBlank(requestParam.getCode()) ||
-                StrUtil.isBlank(requestParam.getOldPassword()) || StrUtil.isBlank(requestParam.getNewPassword())){
+                StrUtil.isBlank(requestParam.getNewPassword())){
             throw new ClientException("参数不能为空！");
         }
 
-        // 验证旧密码
-        // 从数据库中查询用户信息(redis中的没有密码)
-        UserDO userDO = userMapper.selectOne(Wrappers.<UserDO>lambdaQuery().eq(UserDO::getEmail, requestParam.getEmail()));
-        if (userDO == null) {
-            throw new ClientException("用户不存在！");
-        }
-        String oldPassword = requestParam.getOldPassword();
-        String oldPasswordWithMD5 = DigestUtil.md5Hex(oldPassword + userDO.getSalt());
-        if (!oldPasswordWithMD5.equals(userDO.getPassword())) {
-            throw new ClientException("旧密码错误！");
-        }
-
-        // 防御性编程，校验新旧密码是否一致
         String newPassword = requestParam.getNewPassword();
-        if (oldPassword.equals(newPassword)) {
-            throw new ClientException("新密码不能与旧密码相同！");
-        }
-
         // 验证新密码是否合法
         if (newPassword.length() > UserConstant.PASSWORD_MAX_LENGTH || newPassword.length() < UserConstant.PASSWORD_MIN_LENGTH) {
             throw new ClientException(UserRegisterErrorCodeEnum.PASSWORD_ILLEGAL);
@@ -442,12 +425,16 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
 
         // 更新密码
+        // 从数据库中获取用户信息
+        UserDO userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class)
+               .eq(UserDO::getEmail, requestParam.getEmail()));
         String newPasswordWithMD5 = DigestUtil.md5Hex(newPassword + userDO.getSalt());
         UserDO updateUser = UserDO.builder()
                 .id(userDO.getId())
                 .password(newPasswordWithMD5)
                 .build();
         try {
+            // 修改密码
             userMapper.updateById(updateUser);
         }catch (Exception e) {
             log.error("用户密码更新失败：{}", e.getMessage());

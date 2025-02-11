@@ -27,12 +27,6 @@ public class UserForgetPasswordReqDTO {
     private String code;
 
     /**
-     * 旧密码
-     */
-    @Schema(description = "旧密码")
-    private String oldPassword;
-
-    /**
      * 新密码
      */
     @Schema(description = "新密码")
