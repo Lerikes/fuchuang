@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>gateway-service</artifactId>
+    <artifactId>fuchuang-gateway-service</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

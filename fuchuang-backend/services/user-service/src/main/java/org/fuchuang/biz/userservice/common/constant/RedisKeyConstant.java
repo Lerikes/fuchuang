@@ -31,12 +31,12 @@ public final class RedisKeyConstant {
     public static final String USER_SEND_CODE_LIMIT = "fuchuang-user-service:limit:sendCode:";
 
     /**
+     * 用户信息缓存前缀
+     */
+    public static final String USER_INFO_KEY = "fuchuang:user-service:user:";
+
+    /**
      * 用户注册锁的redis前缀
      */
     public static final String USER_REGISTER_LOCK = "fuchuang-user-service:register:lock";
-
-    /**
-     * 用户信息锁
-     */
-    public static final String USER_INFO_LOCK = "fuchuang:user-service:user:";
 }

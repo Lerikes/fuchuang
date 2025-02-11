@@ -248,7 +248,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 user.setPassword("");
                 user.setSalt("");
                 // todo: 三个对缓存的操作应该保证原子性，使用lua脚本做改造
-                stringRedisTemplate.opsForValue().set(RedisKeyConstant.USER_INFO_LOCK + user.getId(), JSON.toJSONString(user), 30, TimeUnit.DAYS);
+                stringRedisTemplate.opsForValue().set(RedisKeyConstant.USER_INFO_KEY + user.getId(), JSON.toJSONString(user), 30, TimeUnit.DAYS);
 
                 // 删除redis中验证码
                 stringRedisTemplate.delete(codeKey);
@@ -351,16 +351,18 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
 
         // 3 更新用户信息
-        // 3.1 先删除缓存
-        distributedCache.delete(RedisKeyConstant.USER_INFO_LOCK + userId);
-        // 3.2 再更新数据库
+        // 3.1 先更新数据库
         UserDO updateUser = UserDO.builder()
+                .id(Long.valueOf(userId))
                 .email(requestParam.getEmail())
                 .username(requestParam.getUsername())
                 .build();
         updateUser.setId(Long.valueOf(userId));
         try {
             userMapper.updateById(updateUser);
+
+            // 3.2 删除redis中的用户信息
+            distributedCache.delete(RedisKeyConstant.USER_INFO_KEY + userId);
         } catch (Exception e) {
             log.error("用户信息更新失败：{}", e.getMessage());
             throw new ClientException("个人信息更新失败！");
