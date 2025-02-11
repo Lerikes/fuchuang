@@ -83,16 +83,29 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             if (StrUtil.isBlank(requestParam.getPassword())) {
                 throw new ClientException("密码不能为空");
             }
-            // 根据邮箱查询用户信息
-            userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class)
-                    .eq(UserDO::getEmail, requestParam.getEmail()));
-            if (userDO == null) {
-                throw new ClientException("用户不存在");
-            }
-            // 加盐比对，规则是 原始密码 + salt 再bcrypt哈希
-            String getPassword = DigestUtil.md5Hex((requestParam.getPassword() + userDO.getSalt()));
-            if (!getPassword.equals(userDO.getPassword())) {
-                throw new ClientException("密码错误");
+
+            // 项目中的测试用户特殊处理
+            if(requestParam.getEmail().equals("12345678@qq.com")){
+                if(!requestParam.getPassword().equals("123456")){
+                    throw new ClientException("密码错误");
+                }else {
+                    userDO = UserDO.builder()
+                          .id(0L)
+                          .username("test")
+                          .build();
+                }
+            }else {
+                // 根据邮箱查询用户信息
+                userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class)
+                        .eq(UserDO::getEmail, requestParam.getEmail()));
+                if (userDO == null) {
+                    throw new ClientException("用户不存在");
+                }
+                // 加盐比对，规则是 原始密码 + salt 再md5哈希
+                String getPassword = DigestUtil.md5Hex((requestParam.getPassword() + userDO.getSalt()));
+                if (!getPassword.equals(userDO.getPassword())) {
+                    throw new ClientException("密码错误");
+                }
             }
         } else {
             // 验证码登录
@@ -100,25 +113,38 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             if (StrUtil.isBlank(requestParam.getCode())) {
                 throw new ClientException("验证码不能为空");
             }
-            // 根据邮箱查询用户信息
-            userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class)
-                    .eq(UserDO::getEmail, requestParam.getEmail()));
-            if (userDO == null) {
-                throw new ClientException("用户不存在");
-            }
-            // 查询redis中的验证码
-            StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
-            // key = prefix + email
-            String realCode = stringRedisTemplate.opsForValue().get(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + requestParam.getEmail());
-            if (StrUtil.isBlank(realCode)) {
-                throw new ClientException("验证码已过期");
-            }
-            if (!realCode.equals(requestParam.getCode())) {
-                throw new ClientException("验证码错误");
-            }
 
-            // 到这里说明验证码正确，删除redis中的验证码
-            stringRedisTemplate.delete(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + requestParam.getEmail());
+            // 项目中的测试用户特殊处理
+            if(requestParam.getEmail().equals("12345678@qq.com")) {
+                if(!requestParam.getCode().equals("002846")){
+                    throw new ClientException("验证码错误");
+                }else {
+                    userDO = UserDO.builder()
+                            .id(0L)
+                            .username("test")
+                            .build();
+                }
+            }else {
+                // 根据邮箱查询用户信息
+                userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class)
+                        .eq(UserDO::getEmail, requestParam.getEmail()));
+                if (userDO == null) {
+                    throw new ClientException("用户不存在");
+                }
+                // 查询redis中的验证码
+                StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+                // key = prefix + email
+                String realCode = stringRedisTemplate.opsForValue().get(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + requestParam.getEmail());
+                if (StrUtil.isBlank(realCode)) {
+                    throw new ClientException("验证码已过期");
+                }
+                if (!realCode.equals(requestParam.getCode())) {
+                    throw new ClientException("验证码错误");
+                }
+
+                // 到这里说明验证码正确，删除redis中的验证码
+                stringRedisTemplate.delete(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + requestParam.getEmail());
+            }
         }
 
         // 构建用户上下文
@@ -154,6 +180,12 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         String email = requestParam.getEmail();
         if (StrUtil.isBlank(email)) {
             throw new ClientException("参数有误");
+        }
+
+        // 项目中的测试用户
+        if(email.equals("12345678@qq.com")){
+            // 直接返回
+            return true;
         }
 
         // 限流操作
