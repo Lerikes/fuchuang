@@ -6,22 +6,29 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 用户登录发送验证码请求参数
+ * 用户忘记密码请求参数
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "用户登录发送验证码请求参数")
-public class UserSendCodeReqDTO {
-    /**
-     * 申请验证码类型，1：登录 2：注册 0：重置 3: 忘记密码
-     */
-    @Schema(description = "申请类型")
-    private int type;
+@Schema(description = "用户忘记密码请求参数")
+public class UserForgetPasswordReqDTO {
 
     /**
      * 邮箱
      */
     @Schema(description = "邮箱")
     private String email;
+
+    /**
+     * 验证码
+     */
+    @Schema(description = "验证码")
+    private String code;
+
+    /**
+     * 新密码
+     */
+    @Schema(description = "新密码")
+    private String newPassword;
 }

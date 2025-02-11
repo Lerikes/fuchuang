@@ -1,0 +1,47 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: fuchuang-passage-service
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://47.109.99.11:3306/fuchuang?useUnicode=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: test
+    password: 123456
+  data:
+    redis:
+      host: 47.109.99.11
+      port: 6379
+      password: 123456
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 139.159.224.143:8848
+        namespace: 57e33dd1-7ee1-41c2-ad57-45186ee6be9b
+  mail:
+    host: smtp.163.com
+    username: 13678035977@163.com
+    password: MVAOQFOCWGYGFPYV
+    default-encoding: UTF-8
+
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations:
+    classpath:mapper/*.xml
+
+framework:
+  cache:
+    redis:
+      value-timeout: 50000
+
+register:
+  verify-code:
+    limit: 1
+    ttl: 60

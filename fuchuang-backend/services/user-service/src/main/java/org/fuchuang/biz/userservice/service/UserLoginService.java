@@ -1,9 +1,6 @@
 package org.fuchuang.biz.userservice.service;
 
-import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
+import org.fuchuang.biz.userservice.dto.req.*;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 
 /**
@@ -55,4 +52,16 @@ public interface UserLoginService {
      * @param requestParam 用户修改信息参数
      */
     void userInfoUpdate(UserResetReqDTO requestParam);
+
+    /**
+     * 用户密码重置
+     * @param requestParam 用户密码重置请求参数
+     */
+    void resetPassword(UserResetPasswordReqDTO requestParam);
+
+    /**
+     * 用户忘记密码
+     * @param requestParam 忘记密码请求参数
+     */
+    void forgetPassword(UserForgetPasswordReqDTO requestParam);
 }

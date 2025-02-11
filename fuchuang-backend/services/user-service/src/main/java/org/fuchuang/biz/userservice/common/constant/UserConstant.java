@@ -23,6 +23,11 @@ public class UserConstant {
     public static final int RESET_TYPE = 0;
 
     /**
+     * 忘记密码状态码
+     */
+    public static final int FORGET_PASSWORD_TYPE = 3;
+
+    /**
      * 用户名最小长度
      */
     public static final int PASSWORD_MIN_LENGTH = 6;
@@ -41,4 +46,9 @@ public class UserConstant {
      * 使用验证码登录
      */
     public static final Integer USER_LOGIN_TYPE_CODE = 1;
+
+    /**
+     * 默认用户名前缀
+     */
+    public static final String DEFAULT_USERNAME_PREFIX = "user";
 }

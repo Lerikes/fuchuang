@@ -26,4 +26,7 @@
       * 用户名：nacos
       * 密码：nacos
   * rocketmq：
-    *  TODO: 雷宇阳写
+    * 版本号：5.1.0
+    * 服务器：47.109.99.11
+    * rmqnamesrv端口：9876
+    * rmqbroker端口：10911

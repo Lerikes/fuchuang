@@ -3,10 +3,7 @@ package org.fuchuang.biz.userservice.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.fuchuang.biz.userservice.dto.req.UserLoginReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserRegisterReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserResetReqDTO;
-import org.fuchuang.biz.userservice.dto.req.UserSendCodeReqDTO;
+import org.fuchuang.biz.userservice.dto.req.*;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
 import org.fuchuang.framework.starter.convention.result.Result;
@@ -77,9 +74,33 @@ public class UserLoginController {
      * 用户信息修改
      */
     @Operation(summary = "用户信息修改")
-    @GetMapping("/api/user-service/v1/update")
+    @PostMapping("/api/user-service/v1/user")
     public Result<Void> updateUserInfo(@RequestBody UserResetReqDTO requestParam) {
         userLoginService.userInfoUpdate(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 用户密码重置接口
+     * @param requestParam 重置密码请求参数
+     * @return Result<Void>
+     */
+    @Operation(summary = "重置密码")
+    @PostMapping("/api/user-service/v1/reset-password")
+    public Result<Void> resetPassword(@RequestBody UserResetPasswordReqDTO requestParam) {
+        userLoginService.resetPassword(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 用户忘记密码接口
+     * @param requestParam 忘记密码请求参数
+     * @return Result<Void>
+     */
+    @Operation(summary = "忘记密码")
+    @PostMapping("/api/user-service/v1/forget-password")
+    public Result<Void> forgetPassword(@RequestBody UserForgetPasswordReqDTO requestParam) {
+        userLoginService.forgetPassword(requestParam);
         return Results.success();
     }
 }
