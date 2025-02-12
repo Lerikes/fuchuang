@@ -6,6 +6,7 @@ import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
@@ -28,12 +29,16 @@ import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -52,6 +57,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     private final TemplateEngine templateEngine;
     private final RBloomFilter<String> userRegisterCachePenetrationBloomFilter;
     private final AbstractChainContext<UserRegisterReqDTO> abstractChainContext;
+    private final DefaultRedisScript<Long> registerRedisScript;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -279,14 +285,18 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 // 处理密码和盐,这两项隐私信息不能放进redis中
                 user.setPassword("");
                 user.setSalt("");
-                // todo: 三个对缓存的操作应该保证原子性，使用lua脚本做改造
-                stringRedisTemplate.opsForValue().set(RedisKeyConstant.USER_INFO_KEY + user.getId(), JSON.toJSONString(user), 30, TimeUnit.DAYS);
-
-                // 删除redis中验证码
-                stringRedisTemplate.delete(codeKey);
 
                 // 将用户邮箱添加到布隆过滤器中，防止缓存穿透
                 userRegisterCachePenetrationBloomFilter.add(email);
+
+                // 在redis中保存用户信息和删除redis中的验证码，使用lua脚本实现
+                // keys
+                String userInfoKey = RedisKeyConstant.USER_INFO_KEY + email;
+                List<String> keys = Arrays.asList(userInfoKey,codeKey);
+                // args
+                String userInfo = JSON.toJSONString(user);
+                String userInfoTtl = String.valueOf(TimeUnit.DAYS.toSeconds(30));
+                stringRedisTemplate.execute(registerRedisScript,keys,userInfo,userInfoTtl);
             } catch (Exception e) {
                 log.error("注册信息插入错误，注册信息：{}", requestParam);
                 throw new ClientException(UserRegisterErrorCodeEnum.USER_REGISTER_FAIL);
