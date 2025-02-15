@@ -256,7 +256,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
             String code =  stringRedisTemplate.opsForValue().get(codeKey);
             if (code == null) {
-                throw new ClientException(UserRegisterErrorCodeEnum.CODE_NOTNULL);
+                throw new ClientException(UserRegisterErrorCodeEnum.CODE_ILLEGAL);
             }
             if (!code.equals(requestParam.getCode())) {
                 throw new ClientException(UserRegisterErrorCodeEnum.CODE_ILLEGAL);
