@@ -6,7 +6,6 @@ import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
@@ -30,13 +29,11 @@ import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -187,6 +184,10 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         if (StrUtil.isBlank(email)) {
             throw new ClientException("参数有误");
         }
+        int type = requestParam.getType();
+        if (type < 0 || type > 3) {
+            throw new ClientException("参数有误");
+        }
 
         // 项目中的测试用户
         if(email.equals("12345678@qq.com")){
@@ -214,13 +215,13 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         MailUtil.sendMail(javaMailSender, fromEmail, email, process, true);
 
         // 在redis中保存
-        if (requestParam.getType() == UserConstant.LOGIN_TYPE) {
+        if (type == UserConstant.LOGIN_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_LOGIN_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
-        } else if (requestParam.getType() == UserConstant.REGISTER_TYPE) {
+        } else if (type == UserConstant.REGISTER_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_REGISTER_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
-        } else if (requestParam.getType() == UserConstant.RESET_TYPE) {
+        } else if (type == UserConstant.RESET_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_RESET_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
-        } else if (requestParam.getType() == UserConstant.FORGET_PASSWORD_TYPE) {
+        } else if (type == UserConstant.FORGET_PASSWORD_TYPE) {
             distributedCache.put(RedisKeyConstant.USER_FORGET_PASSWORD_VERIFY_CODE + email, verifyCode, verifyCodeTtl, TimeUnit.SECONDS);
         } else {
             throw new ClientException("参数有误");
