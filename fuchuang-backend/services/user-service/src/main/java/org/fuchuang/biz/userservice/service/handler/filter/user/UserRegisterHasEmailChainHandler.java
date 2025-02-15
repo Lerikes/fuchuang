@@ -22,7 +22,7 @@ public final class UserRegisterHasEmailChainHandler implements UserRegisterCreat
      */
     @Override
     public void handler(UserRegisterReqDTO requestParam) {
-        if(!userLoginService.hasEmail(requestParam.getEmail())){
+        if(userLoginService.hasEmail(requestParam.getEmail())){
             throw new ClientException(UserRegisterErrorCodeEnum.MAIL_REGISTERED);
         }
     }
