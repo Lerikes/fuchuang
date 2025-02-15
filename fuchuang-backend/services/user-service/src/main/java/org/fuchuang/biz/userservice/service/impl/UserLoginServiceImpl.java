@@ -88,8 +88,8 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             }
 
             // 项目中的测试用户特殊处理
-            if(requestParam.getEmail().equals("12345678@qq.com")){
-                if(!requestParam.getPassword().equals("123456")){
+            if("12345678@qq.com".equals(requestParam.getEmail())){
+                if(!"123456".equals(requestParam.getPassword())){
                     throw new ClientException("密码错误");
                 }else {
                     userDO = UserDO.builder()
@@ -118,8 +118,8 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
             }
 
             // 项目中的测试用户特殊处理
-            if(requestParam.getEmail().equals("12345678@qq.com")) {
-                if(!requestParam.getCode().equals("002846")){
+            if("12345678@qq.com".equals(requestParam.getEmail())) {
+                if(!"002846".equals(requestParam.getCode())){
                     throw new ClientException("验证码错误");
                 }else {
                     userDO = UserDO.builder()
@@ -190,7 +190,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         }
 
         // 项目中的测试用户
-        if(email.equals("12345678@qq.com")){
+        if("12345678@qq.com".equals(email)){
             // 直接返回
             return true;
         }
@@ -369,7 +369,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     public void userInfoUpdate(UserResetReqDTO requestParam) {
         // 校验参数
         if (requestParam == null || StrUtil.isBlank(requestParam.getEmail()) ||
-                StrUtil.isBlank(requestParam.getUsername()) || StrUtil.isBlank(requestParam.getOldPassword()) || StrUtil.isBlank(requestParam.getNewPassword())) {
+                StrUtil.isBlank(requestParam.getUsername())) {
             throw new ClientException("参数不能为空！");
         }
 
@@ -403,14 +403,12 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         updateUser.setId(Long.valueOf(userId));
         try {
             userMapper.updateById(updateUser);
-
             // 3.2 删除redis中的用户信息
             distributedCache.delete(RedisKeyConstant.USER_INFO_KEY + userId);
         } catch (Exception e) {
             log.error("用户信息更新失败：{}", e.getMessage());
             throw new ClientException("个人信息更新失败！");
         }
-        // TODO redis和mysql一致性保持(采用哪种处理方式)
 
     }
 

@@ -19,18 +19,6 @@ public class UserResetReqDTO {
     private String userId;
 
     /**
-     * 旧密码
-     */
-    @Schema(description = "旧密码")
-    private String oldPassword;
-
-    /**
-     * 新密码
-     */
-    @Schema(description = "新密码")
-    private String newPassword;
-
-    /**
      * 邮箱
      */
     @Email
