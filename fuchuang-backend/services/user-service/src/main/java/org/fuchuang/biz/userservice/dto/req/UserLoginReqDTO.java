@@ -36,6 +36,6 @@ public class UserLoginReqDTO {
      * 登录选项
      * 0 密码 1 验证码
      */
-    @Schema(defaultValue = "登录选项")
+    @Schema(description = "登录选项 0 密码 1 验证码")
     private Integer LoginType;
 }
