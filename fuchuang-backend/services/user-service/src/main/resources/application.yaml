@@ -48,4 +48,4 @@ framework:
 register:
   verify-code:
     limit: 1
-    ttl: 60
+    ttl: 70
