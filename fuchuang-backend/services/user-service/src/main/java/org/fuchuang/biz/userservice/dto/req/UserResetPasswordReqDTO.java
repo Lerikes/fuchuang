@@ -15,6 +15,12 @@ import lombok.NoArgsConstructor;
 public class UserResetPasswordReqDTO {
 
     /**
+     * 用户id
+     */
+    @Schema(description = "用户id")
+    private String userId;
+
+    /**
      * 旧密码
      */
     @Schema(description = "旧密码")

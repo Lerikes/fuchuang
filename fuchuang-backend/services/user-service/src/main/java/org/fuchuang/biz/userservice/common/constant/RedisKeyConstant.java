@@ -39,4 +39,9 @@ public final class RedisKeyConstant {
      * 用户注册锁的redis前缀
      */
     public static final String USER_REGISTER_LOCK = "fuchuang-user-service:register:lock";
+
+    /**
+     * 用户简略信息的redis过期时间
+     */
+    public static final Integer REDIS_USER_INFO_TTL = 24 * 60 * 60;
 }

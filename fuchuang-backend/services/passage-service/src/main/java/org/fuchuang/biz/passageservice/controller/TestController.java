@@ -20,6 +20,7 @@ public class TestController {
 
     /**
      * 测试上传oss
+     * 相关阿里云oss配置写在nacos中
      * @return 文件路径
      */
     @PostMapping("/test/upload")

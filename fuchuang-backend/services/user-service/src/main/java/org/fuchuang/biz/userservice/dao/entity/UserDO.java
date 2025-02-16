@@ -53,4 +53,16 @@ public class UserDO extends BaseDO {
      */
     @TableField("salt")
     private String salt;
+
+    /**
+     * 头像
+     */
+    @TableField("image")
+    private String image;
+
+    /**
+     * 签名
+     */
+    @TableField("signature")
+    private String signature;
 }
