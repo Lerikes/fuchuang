@@ -14,11 +14,6 @@ spring:
       host: 47.109.99.11
       port: 6379
       password: 123456
-  cloud:
-    nacos:
-      discovery:
-        server-addr: 139.159.224.143:8848
-        namespace: 57e33dd1-7ee1-41c2-ad57-45186ee6be9b
   mail:
 #    host: smtp.163.com # 配置 smtp 服务器地址
 #    username: 14780339727@163.com # 配置邮箱用户名(你的邮箱地址)
