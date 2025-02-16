@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.dromara.x.file.storage.core.FileInfo;
+import org.dromara.x.file.storage.core.FileStorageService;
 import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
 import org.fuchuang.biz.userservice.common.constant.UserConstant;
 import org.fuchuang.biz.userservice.common.enums.UserRegisterErrorCodeEnum;
@@ -40,6 +42,8 @@ public class UserInfoServiceImpl extends ServiceImpl<UserMapper, UserDO> impleme
     private final DistributedCache distributedCache;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final FileStorageService fileStorageService;
 
     /**
      * 用户密码重置
@@ -163,9 +167,19 @@ public class UserInfoServiceImpl extends ServiceImpl<UserMapper, UserDO> impleme
         //2.2 拼接文件名
         String name = UUID.randomUUID() + suffix;
         //3. 上传文件
-        String url = null;
+        String url;
         try {
-            // TODO 实现头像上传到oss逻辑
+            FileInfo fileInfo = fileStorageService.of(imageFile)
+                    .setPath("avatar/")
+                    .setSaveFilename(name)
+                    .upload();
+            url = fileInfo.getUrl();
+
+            //4. 保存用户头像
+            Long userId = Long.valueOf(UserContext.getUserId());
+            UserDO userDO = userMapper.selectById(userId);
+            userDO.setImage(url);
+            userMapper.updateById(userDO);
         } catch (Exception e) {
             log.error("上传头像失败: {}", e.getMessage());
         }
