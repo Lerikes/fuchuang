@@ -29,7 +29,7 @@ public class UserInfoController {
      */
     @Operation(summary = "获取用户信息")
     @GetMapping("/api/user-service/v1/user/{userId}")
-    public Result<UserPersonalInfoRespDTO> getUserInfo(@PathVariable(required = false) Long userId) {
+    public Result<UserPersonalInfoRespDTO> getUserInfo(@PathVariable(required = false) String userId) {
         UserPersonalInfoRespDTO result = userInfoService.getUserPersonalInfo(userId);
         return Results.success(result);
     }

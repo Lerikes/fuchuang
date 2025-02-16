@@ -191,10 +191,10 @@ public class UserInfoServiceImpl extends ServiceImpl<UserMapper, UserDO> impleme
      * @return 用户信息
      */
     @Override
-    public UserPersonalInfoRespDTO getUserPersonalInfo(Long userId) {
+    public UserPersonalInfoRespDTO getUserPersonalInfo(String userId) {
         //  获取到用户的id,如果为空,则说明是查自己，从ThreadLocal中获取
-        if (userId == null){
-            userId = Long.valueOf(UserContext.getUserId());
+        if (StrUtil.isBlank(userId)){
+            userId = UserContext.getUserId();
         }
         log.info("用户个人信息查询: {}", userId);
 

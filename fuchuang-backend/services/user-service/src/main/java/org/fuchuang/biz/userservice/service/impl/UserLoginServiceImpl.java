@@ -299,7 +299,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
                 List<String> keys = Arrays.asList(userInfoKey,codeKey);
                 // args
                 String userInfo = JSON.toJSONString(user);
-                String userInfoTtl = String.valueOf(TimeUnit.DAYS.toSeconds(30));
+                String userInfoTtl = String.valueOf(RedisKeyConstant.REDIS_USER_INFO_TTL);
                 stringRedisTemplate.execute(registerRedisScript,keys,userInfo,userInfoTtl);
             } catch (Exception e) {
                 log.error("注册信息插入错误，注册信息：{}", requestParam);

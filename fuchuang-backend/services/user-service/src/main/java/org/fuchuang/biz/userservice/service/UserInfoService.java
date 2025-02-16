@@ -16,7 +16,7 @@ public interface UserInfoService {
      * @param userId 用户id
      * @return 用户个人信息
      */
-    UserPersonalInfoRespDTO getUserPersonalInfo(Long userId);
+    UserPersonalInfoRespDTO getUserPersonalInfo(String userId);
 
     /**
      * 用户信息修改
