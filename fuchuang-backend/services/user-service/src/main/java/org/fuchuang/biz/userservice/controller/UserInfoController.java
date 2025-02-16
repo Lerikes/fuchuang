@@ -11,10 +11,7 @@ import org.fuchuang.biz.userservice.service.UserInfoService;
 import org.fuchuang.framework.starter.convention.result.Result;
 import org.fuchuang.framework.starter.web.Results;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -31,8 +28,8 @@ public class UserInfoController {
      * 获取用户信息
      */
     @Operation(summary = "获取用户信息")
-    @PostMapping("/api/user-service/v1/user/personal-info")
-    public Result<UserPersonalInfoRespDTO> getUserInfo(@RequestParam(value = "userId", required = false) Long userId) {
+    @GetMapping("/api/user-service/v1/user/{userId}")
+    public Result<UserPersonalInfoRespDTO> getUserInfo(@PathVariable(required = false) Long userId) {
         UserPersonalInfoRespDTO result = userInfoService.getUserPersonalInfo(userId);
         return Results.success(result);
     }
