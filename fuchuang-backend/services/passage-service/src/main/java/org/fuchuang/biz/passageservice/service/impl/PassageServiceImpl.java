@@ -66,6 +66,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
             throw new ClientException("文章上传失败！");
         }
 
+        // todo: 这里不能这样处理，这样肯定会有性能问题，而且可能有并发问题，一定要改！！！！！！
         // 并发上传图片处理
         List<String> imageUrls = Collections.synchronizedList(new ArrayList<>());
         List<MultipartFile> validFiles = Optional.ofNullable(requestParam.getImages())
@@ -146,6 +147,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         result.setLikes(passageDO.getLikes());
         result.setCollection(passageDO.getCollection());
         result.setViews(passageDO.getViews());
+        // todo 这里需要对返回的图片url进行处理
         result.setImages(passageDO.getImages());
         log.info("文章细节：{}", result);
 
