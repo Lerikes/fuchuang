@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.fuchuang.framework.starter.common.enums.DelEnum;
 import org.apache.ibatis.reflection.MetaObject;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -17,8 +18,8 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void insertFill(MetaObject metaObject) {
-        this.strictInsertFill(metaObject,"createTime", Date.class,new Date());
-        this.strictInsertFill(metaObject,"updateTime", Date.class,new Date());
+        this.strictInsertFill(metaObject,"createTime", LocalDateTime.class,LocalDateTime.now());
+        this.strictInsertFill(metaObject,"updateTime", LocalDateTime.class,LocalDateTime.now());
         this.strictInsertFill(metaObject,"delFlag", Integer.class, DelEnum.NORMAL.code());
     }
 
@@ -28,6 +29,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
      */
     @Override
     public void updateFill(MetaObject metaObject) {
-        this.strictInsertFill(metaObject,"updateTime", Date.class,new Date());
+        this.strictInsertFill(metaObject,"updateTime", LocalDateTime.class,LocalDateTime.now());
     }
 }

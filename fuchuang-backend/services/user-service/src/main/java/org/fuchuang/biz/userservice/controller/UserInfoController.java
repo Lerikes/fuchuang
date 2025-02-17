@@ -10,7 +10,6 @@ import org.fuchuang.biz.userservice.dto.resp.UserPersonalInfoRespDTO;
 import org.fuchuang.biz.userservice.service.UserInfoService;
 import org.fuchuang.framework.starter.convention.result.Result;
 import org.fuchuang.framework.starter.web.Results;
-import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 用户信息控制层
  */
 @RestController
+@RequestMapping("/api/user-service/v1/")
 @RequiredArgsConstructor
 @Tag(name = "用户信息控制层")
 public class UserInfoController {
@@ -28,7 +28,7 @@ public class UserInfoController {
      * 获取用户信息
      */
     @Operation(summary = "获取用户信息")
-    @GetMapping("/api/user-service/v1/user/{userId}")
+    @GetMapping("/user/{userId}")
     public Result<UserPersonalInfoRespDTO> getUserInfo(@PathVariable(required = false) String userId) {
         UserPersonalInfoRespDTO result = userInfoService.getUserPersonalInfo(userId);
         return Results.success(result);
@@ -38,7 +38,7 @@ public class UserInfoController {
      * 用户信息修改
      */
     @Operation(summary = "用户信息修改")
-    @PostMapping("/api/user-service/v1/user")
+    @PostMapping("/user/update")
     public Result<Void> updateUserInfo(@RequestBody UserResetReqDTO requestParam) {
         userInfoService.userInfoUpdate(requestParam);
         return Results.success();
@@ -50,7 +50,7 @@ public class UserInfoController {
      * @return Result<Void>
      */
     @Operation(summary = "重置密码")
-    @PostMapping("/api/user-service/v1/reset-password")
+    @PostMapping("/reset-password")
     public Result<Void> resetPassword(@RequestBody UserResetPasswordReqDTO requestParam) {
         userInfoService.resetPassword(requestParam);
         return Results.success();
@@ -62,7 +62,7 @@ public class UserInfoController {
      * @return Result<Void>
      */
     @Operation(summary = "忘记密码")
-    @PostMapping("/api/user-service/v1/forget-password")
+    @PostMapping("/forget-password")
     public Result<Void> forgetPassword(@RequestBody UserForgetPasswordReqDTO requestParam) {
         userInfoService.forgetPassword(requestParam);
         return Results.success();
@@ -72,7 +72,7 @@ public class UserInfoController {
      * 用户头像上传
      */
     @Operation(summary = "头像上传")
-    @PostMapping("/api/user-service/v1/image/upload")
+    @PostMapping("/upload_avatar")
     public Result<Void> uploadUserImage(@RequestBody MultipartFile imageFile) {
         userInfoService.uploadUserImage(imageFile);
         return Results.success();

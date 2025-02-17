@@ -30,6 +30,12 @@ public class PassageDO extends BaseDO {
     private String title;
 
     /**
+     * 文章分区
+     */
+    @TableField("label")
+    private String label;
+
+    /**
      * 文章内容
      */
     @TableField("content")
@@ -38,8 +44,8 @@ public class PassageDO extends BaseDO {
     /**
      * 文章作者用户id
      */
-    @TableField("user_id")
-    private Long userId;
+    @TableField("author_id")
+    private Long authorId;
 
     /**
      * 文章作者用户

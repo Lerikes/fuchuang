@@ -30,6 +30,12 @@ public class PassageUploadReqDTO {
     private String content;
 
     /**
+     * 文章分区
+     */
+    @Schema(description = "文章分区")
+    private String label;
+
+    /**
      * 文章图片
      */
     @Schema(description = "文章图片")

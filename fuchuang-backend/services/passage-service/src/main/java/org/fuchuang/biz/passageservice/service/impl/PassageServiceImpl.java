@@ -11,6 +11,8 @@ import org.fuchuang.biz.passageservice.common.constant.ParamConstant;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
+import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
+import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.PassageService;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
@@ -51,7 +53,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         PassageDO passageDO = PassageDO.builder()
                 .title(HtmlUtils.htmlEscape(requestParam.getTitle())) // xss防御
                 .content(HtmlUtils.htmlEscape(requestParam.getContent()))
-                .userId(Long.valueOf(UserContext.getUserId()))
+                .authorId(Long.valueOf(UserContext.getUserId()))
+                .label(HtmlUtils.htmlEscape(requestParam.getLabel()))
                 .likes(ParamConstant.UPLOAD_DEFAULT_COUNT)
                 .views(ParamConstant.UPLOAD_DEFAULT_COUNT)
                 .collection(ParamConstant.UPLOAD_DEFAULT_COUNT)
@@ -96,6 +99,57 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
                 }
             });
         }
+    }
+
+    /**
+     * 一级页面获取
+     * @return 按标签分区的文章标题
+     */
+    @Override
+    public Map<String, List<FirstPassageInfoRespDTO>> getFirstPassageInfo() {
+        // 获取数据
+        List<PassageDO> passages = passageMapper.getFirstPassageInfo();
+        // 按照标签分类
+        Map<String, List<FirstPassageInfoRespDTO>> result = new LinkedHashMap<>();
+        passages.forEach(passageDO -> {
+            String label = passageDO.getLabel();
+            result.computeIfAbsent(label, k -> new ArrayList<>())
+                    .add(new FirstPassageInfoRespDTO(passageDO.getId().toString(),
+                            passageDO.getTitle(),
+                            passageDO.getCreateTime(),
+                            passageDO.getUpdateTime()));
+        });
+        return result;
+    }
+
+    /**
+     * 文章细节获取
+     * @param passageId 选择文章的id
+     * @return 文章内容
+     */
+    @Override
+    public PassageDetailInfoRespDTO getPassageDetailInfo(String passageId) {
+        // 参数校验
+        if (StringUtils.isEmpty(passageId)) {
+            throw new ClientException("传参有误！");
+        }
+
+        // 从数据库查询文章信息
+        PassageDO passageDO = passageMapper.selectById(passageId);
+        PassageDetailInfoRespDTO result = new PassageDetailInfoRespDTO();
+        result.setPassageId(passageId);
+        result.setTitle(passageDO.getTitle());
+        result.setLabel(passageDO.getLabel());
+        result.setContent(passageDO.getContent());
+        result.setAuthorId(String.valueOf(passageDO.getAuthorId()));
+        result.setUsername(passageDO.getUserName());
+        result.setLikes(passageDO.getLikes());
+        result.setCollection(passageDO.getCollection());
+        result.setViews(passageDO.getViews());
+        result.setImages(passageDO.getImages());
+        log.info("文章细节：{}", result);
+
+        return result;
     }
 
     /**

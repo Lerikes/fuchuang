@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.fuchuang.biz.userservice.common.constant.RedisKeyConstant;
 import org.fuchuang.biz.userservice.common.constant.UserConstant;
 import org.fuchuang.biz.userservice.common.constant.UserDefaultImageConstant;
 import org.fuchuang.biz.userservice.common.enums.UserChainMarkEnum;
@@ -19,11 +18,11 @@ import org.fuchuang.biz.userservice.dto.req.*;
 import org.fuchuang.biz.userservice.dto.resp.UserLoginRespDTO;
 import org.fuchuang.biz.userservice.service.UserLoginService;
 import org.fuchuang.biz.userservice.toolkit.MailUtil;
+import org.fuchuang.framework.starter.bases.constant.RedisKeyConstant;
 import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
 import org.fuchuang.framework.starter.designpattern.chain.AbstractChainContext;
-import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.fuchuang.frameworks.starter.user.core.UserInfoDTO;
 import org.fuchuang.frameworks.starter.user.toolkit.JWTUtil;
 import org.redisson.api.*;
@@ -200,7 +199,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 构造key
         String key = RedisKeyConstant.USER_SEND_CODE_LIMIT + email;
         // 限流
-        doRateLimit(key, verifyCodeLimit, verifyCodeTtl, "验证码发送过于频繁，请稍后再试");
+        doRateLimit(key, verifyCodeLimit, verifyCodeTtl);
 
         // 发送验证码
         // todo: 使用MQ
@@ -324,12 +323,11 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
     /**
      * 限流操作
      *
-     * @param key     限流key
-     * @param limit   指定时间内允许的请求数
-     * @param ttl     指定时间 单位秒
-     * @param message 限流的提示信息
+     * @param key   限流key
+     * @param limit 指定时间内允许的请求数
+     * @param ttl   指定时间 单位秒
      */
-    private void doRateLimit(String key, int limit, int ttl, String message) {
+    private void doRateLimit(String key, int limit, int ttl) {
         // 创建限流器
         RRateLimiter rateLimiter = redissonClient.getRateLimiter(key);
         rateLimiter.trySetRate(RateType.OVERALL, limit,
@@ -337,7 +335,7 @@ public class UserLoginServiceImpl extends ServiceImpl<UserMapper, UserDO> implem
         // 获取令牌
         boolean result = rateLimiter.tryAcquire(1);
         if (!result) {
-            throw new ServiceException(message);
+            throw new ServiceException("验证码发送过于频繁，请稍后再试");
         }
     }
 

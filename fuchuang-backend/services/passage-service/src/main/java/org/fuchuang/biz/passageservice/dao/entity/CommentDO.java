@@ -16,7 +16,7 @@ import org.fuchuang.framework.starter.database.base.BaseDO;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("tbl_passage_comment")
-public class PassageCommentDO extends BaseDO {
+public class CommentDO extends BaseDO {
 
     /**
      * 评论id
@@ -35,6 +35,12 @@ public class PassageCommentDO extends BaseDO {
      */
     @TableField("user_id")
     private Long userId;
+
+    /**
+     * 评论发布用户名称
+     */
+    @TableField("username")
+    private String username;
 
     /**
      * 评论主体
