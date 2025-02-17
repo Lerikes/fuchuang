@@ -165,7 +165,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserMapper, UserDO> impleme
             throw new ClientException("不支持的文件类型！");
         }
         //2.2 拼接文件名
-        String name = UUID.randomUUID() + suffix;
+        String name = "avatar_" + UUID.randomUUID() + suffix;
         //3. 上传文件
         String url;
         try {

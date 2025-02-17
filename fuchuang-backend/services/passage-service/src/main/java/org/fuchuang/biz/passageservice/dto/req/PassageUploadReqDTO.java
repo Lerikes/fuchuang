@@ -1,12 +1,12 @@
 package org.fuchuang.biz.passageservice.dto.req;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * 文章上传请求参数
@@ -16,27 +16,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "文章上传请求参数")
 public class PassageUploadReqDTO {
-    /**
-     * id
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
 
     /**
      * 文章标题
      */
-    @TableField("title")
+    @Schema(description = "文章标题")
     private String title;
 
     /**
      * 文章内容
      */
-    @TableField("content")
+    @Schema(description = "文章内容")
     private String content;
 
     /**
-     * 文章作者用户id
+     * 文章图片
      */
-    @TableField("user_id")
-    private Long userId;
+    @Schema(description = "文章图片")
+    private List<MultipartFile> images;
 }

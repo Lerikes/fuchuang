@@ -40,4 +40,34 @@ public class PassageDO extends BaseDO {
      */
     @TableField("user_id")
     private Long userId;
+
+    /**
+     * 文章作者用户
+     */
+    @TableField("user_name")
+    private String userName;
+
+    /**
+     * 文章点赞数
+     */
+    @TableField("likes")
+    private Long likes;
+
+    /**
+     * 文章收藏数
+     */
+    @TableField("collection")
+    private Long collection;
+
+    /**
+     * 文章观看次数
+     */
+    @TableField("views")
+    private Long views;
+
+    /**
+     * 文章图片地址(可能有多个图片，在数据库中用json存储)
+     */
+    @TableField("images")
+    private String images;
 }
