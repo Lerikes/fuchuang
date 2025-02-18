@@ -3,6 +3,8 @@ package org.fuchuang.biz.passageservice.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.fuchuang.biz.passageservice.dto.req.CommentReqDTO;
+import org.fuchuang.biz.passageservice.dto.req.DoLikeReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
@@ -60,40 +62,31 @@ public class PassageController {
 
     /**
      * 点赞
-     * @param passageId 文章id
-     * @param authorId 上传者id
-     * @param type 1为点赞，0为取消点赞
      * @return 是否成功
      */
     @PostMapping("/doLike")
-    public Result<String> doLike(String passageId, String authorId, int type){
-        passageDoLikeService.doLike(passageId, authorId, type);
+    public Result<String> doLike(@RequestBody DoLikeReqDTO requestParam){
+        passageDoLikeService.doLike(requestParam);
         return Results.success("点赞成功！");
     }
 
     /**
      * 收藏
-     * @param passageId 视频id
-     * @param authorId 作者id
-     * @param type 1为收藏，0为取消收藏
      * @return 是否成功
      */
     @PostMapping("/doCollect")
-    public Result<String> doCollect(String passageId, String authorId, int type){
-        passageDoLikeService.doCollect(passageId, authorId, type);
+    public Result<String> doCollect(@RequestBody DoLikeReqDTO requestParam){
+        passageDoLikeService.doCollect(requestParam);
         return Results.success("收藏成功！");
     }
 
     /**
      * 评论
-     * @param passageId 视频id
-     * @param parentId 父评论id
-     * @param content 评论内容
      * @return 是否成功
      */
     @PostMapping("/doComment")
-    public Result<String> doComment(String passageId, String parentId, String content){
-        passageDoLikeService.doComment(passageId, parentId, content);
+    public Result<String> doComment(@RequestBody CommentReqDTO requestParam){
+        passageDoLikeService.doComment(requestParam);
         return Results.success("评论成功！");
     }
 }

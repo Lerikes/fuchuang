@@ -18,7 +18,6 @@ import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.PassageService;
-import org.fuchuang.framework.starter.common.toolkit.BeanUtil;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.springframework.beans.BeanUtils;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.HtmlUtils;
 
 import java.util.*;
 
