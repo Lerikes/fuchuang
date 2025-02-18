@@ -83,4 +83,10 @@ public class PassageDO extends BaseDO {
      */
     @TableField("fake_rate")
     private BigDecimal fakeRate;
+
+    /**
+     * 文章状态 0 草稿 1 已发布
+     */
+    @TableField("status")
+    private Integer status;
 }

@@ -1,23 +1,28 @@
 package org.fuchuang.biz.passageservice.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
-import org.fuchuang.biz.passageservice.common.constant.ParamConstant;
+import org.fuchuang.biz.passageservice.dao.entity.PassageContentDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
+import org.fuchuang.biz.passageservice.dao.mapper.PassageContentMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.PassageService;
+import org.fuchuang.framework.starter.common.toolkit.BeanUtil;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.HtmlUtils;
 
@@ -35,7 +40,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
 
     private final FileStorageService fileStorageService;
 
-    private final ObjectMapper objectMapper;
+    private final PassageContentMapper passageContentMapper;
 
     /**
      * 文章上传
@@ -44,61 +49,43 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void uploadPassage(PassageUploadReqDTO requestParam) {
-        // 参数检验
-        if (requestParam == null || StringUtils.isBlank(requestParam.getTitle()) || StringUtils.isBlank(requestParam.getContent())) {
-            throw new ClientException("上传参数有误！");
+       // 参数校验
+        if (requestParam == null || StringUtils.isEmpty(requestParam.getTitle()) || StringUtils.isEmpty(requestParam.getContent())
+                || requestParam.getPartition() == null || requestParam.getPartition() < 0
+                || requestParam.getImages() == null || requestParam.getImages().isEmpty()) {
+            throw new ClientException("传参有误！");
         }
 
-        // 构建文章实体，先插入到数据库
-        PassageDO passageDO = PassageDO.builder()
-                .title(HtmlUtils.htmlEscape(requestParam.getTitle())) // xss防御
-                .content(HtmlUtils.htmlEscape(requestParam.getContent()))
-                .authorId(Long.valueOf(UserContext.getUserId()))
-                .label(HtmlUtils.htmlEscape(requestParam.getLabel()))
-                .likes(ParamConstant.UPLOAD_DEFAULT_COUNT)
-                .views(ParamConstant.UPLOAD_DEFAULT_COUNT)
-                .collection(ParamConstant.UPLOAD_DEFAULT_COUNT)
-                .build();
-        // 保存到数据库
+        // 获取当前登录用户id
+        String userId = UserContext.getUserId();
+
+        // 新建文章实体类
+        PassageDO passageDO = new PassageDO();
+        // 属性拷贝
+        BeanUtils.copyProperties(requestParam, passageDO);
+        // 设置用户id
+        passageDO.setAuthorId(Long.valueOf(userId));
+        // 将图片列表转换为用逗号分隔的字符串
+        String imagesString = String.join(",", requestParam.getImages());
+        // 设置文章图片
+        passageDO.setImages(imagesString);
+
         try {
+            // 保存文章到数据库
             passageMapper.insert(passageDO);
-        } catch (Exception e) {
-            throw new ClientException("文章上传失败！");
-        }
 
-        // todo: 这里不能这样处理，这样肯定会有性能问题，而且可能有并发问题，一定要改！！！！！！
-        // 并发上传图片处理
-        List<String> imageUrls = Collections.synchronizedList(new ArrayList<>());
-        List<MultipartFile> validFiles = Optional.ofNullable(requestParam.getImages())
-                .orElse(Collections.emptyList())
-                .parallelStream()  // 启用并行流
-                .filter(file -> !file.isEmpty())
-                .toList();
-        try {
-            validFiles.parallelStream().forEach(file -> {
-                try {
-                    String url = uploadPassageImages(file);
-                    imageUrls.add(url);
-                } catch (Exception e) {
-                    throw new ClientException("获取图片失败！");
-                }
-            });
-            // 更新图片信息
-            try {
-                passageDO.setImages(objectMapper.writeValueAsString(imageUrls));
-                passageMapper.updateById(passageDO);
-            } catch (Exception e) {
-                throw new ClientException("图片序列化失败！");
-            }
-        } catch (Exception e) {
-            // 如果文件上传失败应该进行清理
-            imageUrls.parallelStream().forEach(url -> {
-                try {
-                    fileStorageService.delete(url);
-                } catch (Exception e1) {
-                    throw new ClientException("文件清理失败！");
-                }
-            });
+            // 新建文章内容实体类
+            PassageContentDO passageContentDO = new PassageContentDO();
+            // 设置文章id
+            passageContentDO.setPassageId(passageDO.getId());
+            // 设置文章内容
+            passageContentDO.setContent(requestParam.getContent());
+            // 保存文章内容到数据库
+            passageContentMapper.insert(passageContentDO);
+        }catch (Exception e) {
+            // 发生异常，回滚事务
+            log.error("文章上传失败", e);
+            throw new ClientException("文章上传失败");
         }
     }
 
@@ -113,8 +100,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         // 按照标签分类
         Map<String, List<FirstPassageInfoRespDTO>> result = new LinkedHashMap<>();
         passages.forEach(passageDO -> {
-            String label = passageDO.getLabel();
-            result.computeIfAbsent(label, k -> new ArrayList<>())
+            String partition = passageDO.getPartition();
+            result.computeIfAbsent(partition, k -> new ArrayList<>())
                     .add(new FirstPassageInfoRespDTO(passageDO.getId().toString(),
                             passageDO.getTitle(),
                             passageDO.getCreateTime(),
@@ -137,11 +124,15 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
 
         // 从数据库查询文章信息
         PassageDO passageDO = passageMapper.selectById(passageId);
+        // 查询文章的内容
+        PassageContentDO passageContentDO = passageContentMapper.selectOne(Wrappers.<PassageContentDO>lambdaQuery()
+                .eq(PassageContentDO::getPassageId, passageId));
         PassageDetailInfoRespDTO result = new PassageDetailInfoRespDTO();
+        // todo 增加返回信息
         result.setPassageId(passageId);
         result.setTitle(passageDO.getTitle());
-        result.setLabel(passageDO.getLabel());
-        result.setContent(passageDO.getContent());
+        result.setPartition(passageDO.getPartition());
+        result.setContent(passageContentDO.getContent());
         result.setAuthorId(String.valueOf(passageDO.getAuthorId()));
         result.setUsername(passageDO.getUserName());
         result.setLikes(passageDO.getLikes());

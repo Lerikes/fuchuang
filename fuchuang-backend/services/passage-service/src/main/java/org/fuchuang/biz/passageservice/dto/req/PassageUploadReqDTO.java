@@ -33,11 +33,17 @@ public class PassageUploadReqDTO {
      * 文章分区
      */
     @Schema(description = "文章分区")
-    private String label;
+    private Integer partition;
 
     /**
      * 文章图片
      */
     @Schema(description = "文章图片")
-    private List<MultipartFile> images;
+    private List<String> images;
+
+    /**
+     * 文章状态 0草稿 1发布
+     */
+    @Schema(description = "文章状态")
+    private Integer status;
 }

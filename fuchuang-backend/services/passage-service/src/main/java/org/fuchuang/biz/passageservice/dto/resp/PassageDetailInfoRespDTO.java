@@ -33,7 +33,7 @@ public class PassageDetailInfoRespDTO {
      * 文章分区
      */
     @Schema(description = "文章分区")
-    private String label;
+    private String partition;
 
     /**
      * 文章内容
