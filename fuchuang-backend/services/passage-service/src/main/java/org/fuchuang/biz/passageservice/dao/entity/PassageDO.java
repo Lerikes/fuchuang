@@ -7,10 +7,11 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import org.fuchuang.framework.starter.database.base.BaseDO;
 
+import java.math.BigDecimal;
+
 /**
  * 文章实体
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @AllArgsConstructor
@@ -30,16 +31,10 @@ public class PassageDO extends BaseDO {
     private String title;
 
     /**
-     * 文章分区
+     * 文章分区id
      */
-    @TableField("label")
-    private String label;
-
-    /**
-     * 文章内容
-     */
-    @TableField("content")
-    private String content;
+    @TableField("partition")
+    private String partition;
 
     /**
      * 文章作者用户id
@@ -72,8 +67,20 @@ public class PassageDO extends BaseDO {
     private Long views;
 
     /**
-     * 文章图片地址(可能有多个图片，在数据库中用json存储)
+     * 文章图片地址(可能有多个图片，在数据库中用逗号隔开)
      */
     @TableField("images")
     private String images;
+
+    /**
+     * 是否进行过虚假新闻校验
+     */
+    @TableField("is_check")
+    private Boolean isCheck;
+
+    /**
+     * 文章虚假率
+     */
+    @TableField("fake_rate")
+    private BigDecimal fakeRate;
 }

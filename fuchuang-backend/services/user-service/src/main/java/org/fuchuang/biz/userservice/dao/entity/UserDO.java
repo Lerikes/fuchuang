@@ -10,7 +10,6 @@ import org.fuchuang.framework.starter.database.base.BaseDO;
 /**
  * 用户实体
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @AllArgsConstructor

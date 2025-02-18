@@ -10,7 +10,6 @@ import java.util.List;
 /**
  * 文章持久层
  */
-@Mapper
 public interface PassageMapper extends BaseMapper<PassageDO> {
 
     /**

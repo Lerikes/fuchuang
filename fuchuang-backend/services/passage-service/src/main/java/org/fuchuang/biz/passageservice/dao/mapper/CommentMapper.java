@@ -7,6 +7,5 @@ import org.fuchuang.biz.passageservice.dao.entity.CommentDO;
 /**
  * 评论持久层
  */
-@Mapper
 public interface CommentMapper extends BaseMapper<CommentDO> {
 }
