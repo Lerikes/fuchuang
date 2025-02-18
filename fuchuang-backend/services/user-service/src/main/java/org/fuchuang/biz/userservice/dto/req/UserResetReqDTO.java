@@ -30,4 +30,11 @@ public class UserResetReqDTO {
      */
     @Schema(description = "用户名")
     private String username;
+
+    /**
+     * 用户签名
+     */
+    @Schema(description = "用户签名")
+    private String signature;
+
 }

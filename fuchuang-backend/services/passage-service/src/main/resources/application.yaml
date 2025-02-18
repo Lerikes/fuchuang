@@ -14,16 +14,6 @@ spring:
       host: 47.109.99.11
       port: 6379
       password: 123456
-  cloud:
-    nacos:
-      discovery:
-        server-addr: 139.159.224.143:8848
-        namespace: 57e33dd1-7ee1-41c2-ad57-45186ee6be9b
-  mail:
-    host: smtp.163.com
-    username: 13678035977@163.com
-    password: MVAOQFOCWGYGFPYV
-    default-encoding: UTF-8
 
 mybatis-plus:
   global-config:
@@ -40,8 +30,3 @@ framework:
   cache:
     redis:
       value-timeout: 50000
-
-register:
-  verify-code:
-    limit: 1
-    ttl: 60

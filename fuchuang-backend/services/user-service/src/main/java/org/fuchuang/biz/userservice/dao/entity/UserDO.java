@@ -10,7 +10,6 @@ import org.fuchuang.framework.starter.database.base.BaseDO;
 /**
  * 用户实体
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @AllArgsConstructor
@@ -53,4 +52,16 @@ public class UserDO extends BaseDO {
      */
     @TableField("salt")
     private String salt;
+
+    /**
+     * 头像
+     */
+    @TableField("image")
+    private String image;
+
+    /**
+     * 签名
+     */
+    @TableField("signature")
+    private String signature;
 }

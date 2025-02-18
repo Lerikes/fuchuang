@@ -38,6 +38,11 @@ public class UserConstant {
     public static final int PASSWORD_MAX_LENGTH = 20;
 
     /**
+     * 用户签名最大长度
+     */
+    public static final int SIGNATURE_MAX_LENGTH = 100;
+
+    /**
      * 使用密码登录
      */
     public static final Integer USER_LOGIN_TYPE_PASSWORD = 0;
@@ -51,4 +56,9 @@ public class UserConstant {
      * 默认用户名前缀
      */
     public static final String DEFAULT_USERNAME_PREFIX = "user";
+
+    /**
+     * 默认用户个性签名
+     */
+    public static final String DEFAULT_USER_SIGNATURE = "这个人很懒，什么都没有留下";
 }
