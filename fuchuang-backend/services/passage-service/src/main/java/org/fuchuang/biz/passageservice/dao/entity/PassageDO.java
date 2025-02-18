@@ -34,7 +34,7 @@ public class PassageDO extends BaseDO {
      * 文章分区id
      */
     @TableField("partition")
-    private String partition;
+    private Long partition;
 
     /**
      * 文章作者用户id

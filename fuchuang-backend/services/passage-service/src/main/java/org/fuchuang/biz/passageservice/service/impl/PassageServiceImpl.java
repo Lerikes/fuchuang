@@ -130,7 +130,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
 
         // TODO 直接使用sql语句查询所有参数
         // 从数据库查询文章信息
-        PassageDO passageDO = passageMapper.selectById(passageId);
+        PassageDO passageDO = passageMapper.selectById(Long.valueOf(passageId));
         // 查询文章的内容
         PassageContentDO passageContentDO = passageContentMapper.selectOne(Wrappers.<PassageContentDO>lambdaQuery()
                 .eq(PassageContentDO::getPassageId, passageId));
