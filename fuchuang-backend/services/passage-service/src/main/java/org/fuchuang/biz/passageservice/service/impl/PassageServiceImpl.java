@@ -8,8 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
+import org.fuchuang.biz.passageservice.dao.entity.PartitionDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageContentDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
+import org.fuchuang.biz.passageservice.dao.mapper.PartitionMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageContentMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
@@ -41,6 +43,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
     private final FileStorageService fileStorageService;
 
     private final PassageContentMapper passageContentMapper;
+
+    private final PartitionMapper partitionMapper;
 
     /**
      * 文章上传
@@ -95,13 +99,15 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
      */
     @Override
     public Map<String, List<FirstPassageInfoRespDTO>> getFirstPassageInfo() {
+        // todo 使用sql语句直接查询出来，使用groupby分组即可
         // 获取数据
         List<PassageDO> passages = passageMapper.getFirstPassageInfo();
         // 按照标签分类
         Map<String, List<FirstPassageInfoRespDTO>> result = new LinkedHashMap<>();
         passages.forEach(passageDO -> {
-            String partition = passageDO.getPartition();
-            result.computeIfAbsent(partition, k -> new ArrayList<>())
+            Long partitionId = passageDO.getPartition();
+            PartitionDO partitionDO = partitionMapper.selectById(partitionId);
+            result.computeIfAbsent(partitionDO.getName(), k -> new ArrayList<>())
                     .add(new FirstPassageInfoRespDTO(passageDO.getId().toString(),
                             passageDO.getTitle(),
                             passageDO.getCreateTime(),
@@ -122,24 +128,37 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
             throw new ClientException("传参有误！");
         }
 
+        // TODO 直接使用sql语句查询所有参数
         // 从数据库查询文章信息
         PassageDO passageDO = passageMapper.selectById(passageId);
         // 查询文章的内容
         PassageContentDO passageContentDO = passageContentMapper.selectOne(Wrappers.<PassageContentDO>lambdaQuery()
                 .eq(PassageContentDO::getPassageId, passageId));
+        // 查询分区名称
+        PartitionDO partitionDO = partitionMapper.selectById(passageDO.getPartition());
+
         PassageDetailInfoRespDTO result = new PassageDetailInfoRespDTO();
-        // todo 增加返回信息
+        // 设置参数
         result.setPassageId(passageId);
         result.setTitle(passageDO.getTitle());
-        result.setPartition(passageDO.getPartition());
+        result.setPartitionId(passageDO.getPartition());
+        result.setPartitionName(partitionDO.getName());
         result.setContent(passageContentDO.getContent());
         result.setAuthorId(String.valueOf(passageDO.getAuthorId()));
-        result.setUsername(passageDO.getUserName());
+        result.setAuthorName(passageDO.getUserName());
         result.setLikes(passageDO.getLikes());
         result.setCollection(passageDO.getCollection());
         result.setViews(passageDO.getViews());
-        // todo 这里需要对返回的图片url进行处理
-        result.setImages(passageDO.getImages());
+        result.setCreateTime(passageDO.getCreateTime());
+        result.setUpdateTime(passageDO.getUpdateTime());
+        Boolean isCheck = passageDO.getIsCheck();
+        result.setIsCheck(isCheck);
+        result.setFakeRate(isCheck ? passageDO.getFakeRate() : null);
+        String imagesStr = passageDO.getImages();
+        if (StrUtil.isNotBlank(imagesStr)){
+            List<String> images = Arrays.asList(imagesStr.split(","));
+            result.setImages(images);
+        }
         log.info("文章细节：{}", result);
 
         return result;

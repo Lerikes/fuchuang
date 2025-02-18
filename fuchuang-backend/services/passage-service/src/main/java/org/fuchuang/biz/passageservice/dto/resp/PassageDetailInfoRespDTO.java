@@ -6,7 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 文章细节返回参数
@@ -30,10 +32,16 @@ public class PassageDetailInfoRespDTO {
     private String title;
 
     /**
-     * 文章分区
+     * 文章分区id
      */
-    @Schema(description = "文章分区")
-    private String partition;
+    @Schema(description = "文章分区id")
+    private Long partitionId;
+
+    /**
+     * 文章分区名称
+     */
+    @Schema(description = "文章分区名称")
+    private String partitionName;
 
     /**
      * 文章内容
@@ -51,7 +59,7 @@ public class PassageDetailInfoRespDTO {
      * 上传用户名称
      */
     @Schema(description = "上传用户名称")
-    private String username;
+    private String authorName;
 
     /**
      * 点赞数
@@ -89,5 +97,17 @@ public class PassageDetailInfoRespDTO {
      * 文章图片
      */
     @Schema(description = "文章图片")
-    private String images;
+    private List<String> images;
+
+    /**
+     * 是否进行过虚假检验
+     */
+    @Schema(description = "是否进行过虚假检验")
+    private Boolean isCheck;
+
+    /**
+     * 文章虚假率
+     */
+    @Schema(description = "文章虚假率")
+    private BigDecimal fakeRate;
 }
