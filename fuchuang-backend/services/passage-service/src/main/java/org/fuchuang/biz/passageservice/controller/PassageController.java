@@ -21,7 +21,7 @@ import java.util.Map;
  * 文章处理控制层
  */
 @RestController
-@RequestMapping("/api/passage-service/v1/")
+@RequestMapping("/api/passage-service/v1")
 @RequiredArgsConstructor
 @Tag(name = "文章处理控制层")
 public class PassageController {

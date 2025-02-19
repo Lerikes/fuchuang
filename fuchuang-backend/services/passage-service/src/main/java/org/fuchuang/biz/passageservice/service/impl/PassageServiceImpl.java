@@ -1,14 +1,12 @@
 package org.fuchuang.biz.passageservice.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
-import org.fuchuang.biz.passageservice.dao.entity.PartitionDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageContentDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PartitionMapper;
@@ -53,13 +51,13 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
     public void uploadPassage(PassageUploadReqDTO requestParam) {
        // 参数校验
         if (requestParam == null || StringUtils.isEmpty(requestParam.getTitle()) || StringUtils.isEmpty(requestParam.getContent())
-                || requestParam.getPartition() == null || requestParam.getPartition() < 0
-                || requestParam.getImages() == null || requestParam.getImages().isEmpty()) {
+                || requestParam.getPartition() == null || requestParam.getPartition() < 0) {
             throw new ClientException("传参有误！");
         }
 
         // 获取当前登录用户id
         String userId = UserContext.getUserId();
+        // 根据id获取用户名称
 
         // 新建文章实体类
         PassageDO passageDO = new PassageDO();
@@ -67,6 +65,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         BeanUtils.copyProperties(requestParam, passageDO);
         // 设置用户id
         passageDO.setAuthorId(Long.valueOf(userId));
+        // TODO 根据用户id查找并设置上传者名称
+
         // 将图片列表转换为用逗号分隔的字符串
         String imagesString = String.join(",", requestParam.getImages());
         // 设置文章图片
@@ -97,20 +97,20 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
      */
     @Override
     public Map<String, List<FirstPassageInfoRespDTO>> getFirstPassageInfo() {
-        // todo 使用sql语句直接查询出来，使用groupby分组即可
         // 获取数据
-        List<PassageDO> passages = passageMapper.getFirstPassageInfo();
+        List<FirstPassageInfoRespDTO> passages = passageMapper.getFirstPassageInfo();
+
         // 按照标签分类
         Map<String, List<FirstPassageInfoRespDTO>> result = new LinkedHashMap<>();
-        passages.forEach(passageDO -> {
-            Long partitionId = passageDO.getPartition();
-            PartitionDO partitionDO = partitionMapper.selectById(partitionId);
-            result.computeIfAbsent(partitionDO.getName(), k -> new ArrayList<>())
-                    .add(new FirstPassageInfoRespDTO(passageDO.getId().toString(),
-                            passageDO.getTitle(),
-                            passageDO.getCreateTime(),
-                            passageDO.getUpdateTime()));
-        });
+        for (FirstPassageInfoRespDTO passage : passages) {
+            result.computeIfAbsent(passage.getPartitionName(), k -> new ArrayList<>()).add(passage);
+        }
+
+        // TODO 修改为redis取热点文章逻辑
+        // 将标签中的数据按照时间降序（暂时）排序
+        result.forEach((label, passageList) ->
+                passageList.sort(Comparator.comparing(FirstPassageInfoRespDTO::getCreateTime).reversed()));
+
         return result;
     }
 
@@ -126,38 +126,18 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
             throw new ClientException("传参有误！");
         }
 
-        // TODO 直接使用sql语句查询所有参数
-        // 从数据库查询文章信息
-        PassageDO passageDO = passageMapper.selectById(Long.valueOf(passageId));
-        // 查询文章的内容
-        PassageContentDO passageContentDO = passageContentMapper.selectOne(Wrappers.<PassageContentDO>lambdaQuery()
-                .eq(PassageContentDO::getPassageId, passageId));
-        // 查询分区名称
-        PartitionDO partitionDO = partitionMapper.selectById(passageDO.getPartition());
+        // 根据文章id连表查询细节
+        PassageDetailInfoRespDTO result = passageMapper.getPassageDetailInfo(Long.valueOf(passageId));
 
-        PassageDetailInfoRespDTO result = new PassageDetailInfoRespDTO();
         // 设置参数
-        result.setPassageId(passageId);
-        result.setTitle(passageDO.getTitle());
-        result.setPartitionId(passageDO.getPartition());
-        result.setPartitionName(partitionDO.getName());
-        result.setContent(passageContentDO.getContent());
-        result.setAuthorId(String.valueOf(passageDO.getAuthorId()));
-        result.setAuthorName(passageDO.getUserName());
-        result.setLikes(passageDO.getLikes());
-        result.setCollection(passageDO.getCollection());
-        result.setViews(passageDO.getViews());
-        result.setCreateTime(passageDO.getCreateTime());
-        result.setUpdateTime(passageDO.getUpdateTime());
-        Boolean isCheck = passageDO.getIsCheck();
+        Boolean isCheck = result.getIsCheck();
         result.setIsCheck(isCheck);
-        result.setFakeRate(isCheck ? passageDO.getFakeRate() : null);
-        String imagesStr = passageDO.getImages();
+        result.setFakeRate(isCheck ? result.getFakeRate() : null);
+        String imagesStr = (result.getImages() != null ? result.getImages().toString() : "");
         if (StrUtil.isNotBlank(imagesStr)){
             List<String> images = Arrays.asList(imagesStr.split(","));
             result.setImages(images);
         }
-        log.info("文章细节：{}", result);
 
         return result;
     }

@@ -30,16 +30,21 @@ public class FirstPassageInfoRespDTO {
     private String title;
 
     /**
+     * 分区id
+     */
+    @Schema(description = "分区id")
+    private String partitionId;
+
+    /**
+     * 分区名称
+     */
+    @Schema(description = "文章id")
+    private String partitionName;
+
+    /**
      * 文章创建时间
      */
     @Schema(description = "文章创建时间")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
-
-    /**
-     * 文章更新时间
-     */
-    @Schema(description = "文章更新时间")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
 }

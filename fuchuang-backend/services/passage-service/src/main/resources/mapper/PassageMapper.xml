@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.fuchuang.biz.passageservice.dao.mapper.PassageMapper" >
+    <select id="getFirstPassageInfo" resultType="org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO">
+        <![CDATA[
+            WITH ranked_articles AS (
+                SELECT
+                    n1.id AS passageId,
+                    n1.title AS title,
+                    n1.`partition` AS labelId,
+                    n2.name AS labelName,
+                    n1.create_time AS createTime,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY n1.`partition`
+                        ORDER BY n1.create_time DESC
+                        ) AS article_rank
+                FROM tbl_passage AS n1
+                LEFT JOIN tbl_passage_partition AS n2
+                ON n1.`partition` = n2.id
+            )
+            SELECT
+                passageId,
+                title,
+                labelId,
+                labelName,
+                createTime
+            FROM ranked_articles
+            WHERE article_rank <= 10
+        ]]>
+    </select>
+    
+    <select id="getPassageDetailInfo" resultType="org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO">
+        select n1.id as passageId, n1.title as title, n1.author_id as authorId,
+               n1.create_time as createTime, n1.update_time as updateTime, n1.author_name as authorName,
+               n1.likes as likes, n1.collection as collection, n1.views as views, n1.images as images,
+               n1.`partition` as partitionId, n1.is_check as isCheck, n1.fake_rate as fakeRate, n1.status as status,
+               n2.name as partitionName, n3.content as content
+        from tbl_passage as n1
+        left join tbl_passage_partition as n2
+        on n1.`partition` = n2.id
+        left join tbl_passsge_content as n3
+        on n1.id = n3.passage_id
+        where n1.id = #{passageId}
+    </select>
+</mapper>

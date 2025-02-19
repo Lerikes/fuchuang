@@ -35,7 +35,6 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
      */
     @Override
     public void doLike(DoLikeReqDTO doLikeReqDTO) {
-        // todo 修改传参
         // set集合的key
         String setKey = RedisKeyConstant.SET_LIKE_KEY + doLikeReqDTO.getPassageId();
 
@@ -86,8 +85,6 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
      */
     @Override
     public void doCollect(DoLikeReqDTO doLikeReqDTO) {
-        // todo 修改传参
-
         //set集合的key
         String setKey= RedisKeyConstant.SET_COLLECT_KEY + doLikeReqDTO.getPassageId();
 

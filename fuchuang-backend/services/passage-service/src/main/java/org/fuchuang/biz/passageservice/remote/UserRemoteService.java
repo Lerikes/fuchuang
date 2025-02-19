@@ -17,6 +17,6 @@ public interface UserRemoteService {
      * 获取用户信息
      */
     @Operation(summary = "获取用户信息")
-    @GetMapping("/api/user-service/v1//user")
+    @GetMapping("/api/user-service/v1/user")
     Result<UserPersonalInfoRespDTO> getUserInfo(@RequestParam(value = "userId") String userId);
 }
