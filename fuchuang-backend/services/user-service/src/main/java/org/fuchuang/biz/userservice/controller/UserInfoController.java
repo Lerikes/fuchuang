@@ -28,8 +28,8 @@ public class UserInfoController {
      * 获取用户信息
      */
     @Operation(summary = "获取用户信息")
-    @GetMapping("/user/{userId}")
-    public Result<UserPersonalInfoRespDTO> getUserInfo(@PathVariable(required = false) String userId) {
+    @GetMapping("/user")
+    public Result<UserPersonalInfoRespDTO> getUserInfo(@RequestParam(value = "userId") String userId) {
         UserPersonalInfoRespDTO result = userInfoService.getUserPersonalInfo(userId);
         return Results.success(result);
     }
