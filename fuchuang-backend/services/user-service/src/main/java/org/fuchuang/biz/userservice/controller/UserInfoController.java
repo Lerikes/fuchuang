@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 用户信息控制层
  */
 @RestController
-@RequestMapping("/api/user-service/v1/")
+@RequestMapping("/api/user-service/v1")
 @RequiredArgsConstructor
 @Tag(name = "用户信息控制层")
 public class UserInfoController {

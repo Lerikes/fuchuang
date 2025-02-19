@@ -45,8 +45,8 @@ public class PassageDO extends BaseDO {
     /**
      * 文章作者用户
      */
-    @TableField("user_name")
-    private String userName;
+    @TableField("author_name")
+    private String authorName;
 
     /**
      * 文章点赞数
