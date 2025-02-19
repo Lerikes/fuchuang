@@ -8,6 +8,7 @@ import org.fuchuang.biz.passageservice.dao.mapper.CommentMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.dto.req.CommentReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.DoLikeReqDTO;
+import org.fuchuang.biz.passageservice.remote.UserRemoteService;
 import org.fuchuang.biz.passageservice.service.PassageDoLikeService;
 import org.fuchuang.framework.starter.bases.constant.RedisKeyConstant;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
@@ -28,6 +29,8 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
     private final PassageMapper passageMapper;
 
     private final CommentMapper commentMapper;
+
+    private final UserRemoteService userRemoteService;
 
     /**
      * 点赞
