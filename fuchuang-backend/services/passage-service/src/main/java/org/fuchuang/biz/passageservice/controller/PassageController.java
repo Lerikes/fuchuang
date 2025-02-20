@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.fuchuang.biz.passageservice.dto.req.CommentReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.DoLikeReqDTO;
+import org.fuchuang.biz.passageservice.dto.req.PartitionReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
+import org.fuchuang.biz.passageservice.dto.resp.PartitionRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.PassageDoLikeService;
 import org.fuchuang.biz.passageservice.service.PassageService;
@@ -37,6 +39,26 @@ public class PassageController {
     @Operation(summary = "上传文章")
     public Result<Void> uploadPassage(@RequestBody PassageUploadReqDTO requestParam) {
         passageService.uploadPassage(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 获取文章分区列表
+     */
+    @PostMapping("/partition-list")
+    @Operation(summary = "获取文章分区列表")
+    public Result<PartitionRespDTO> getPartitionList() {
+        PartitionRespDTO result = passageService.getPartitionInfo();
+        return Results.success(result);
+    }
+
+    /**
+     * 新建文章分区
+     */
+    @PostMapping("/addPartition")
+    @Operation(summary = "新建文章分区")
+    public Result<Void> addNewPartition(@RequestBody PartitionReqDTO requestParam) {
+        passageService.addNewPartition(requestParam);
         return Results.success();
     }
 

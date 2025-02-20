@@ -34,12 +34,10 @@
                n1.create_time as createTime, n1.update_time as updateTime, n1.author_name as authorName,
                n1.likes as likes, n1.collection as collection, n1.views as views, n1.images as images,
                n1.`partition` as partitionId, n1.is_check as isCheck, n1.fake_rate as fakeRate, n1.status as status,
-               n2.name as partitionName, n3.content as content
+               n2.name as partitionName
         from tbl_passage as n1
         left join tbl_passage_partition as n2
         on n1.`partition` = n2.id
-        left join tbl_passsge_content as n3
-        on n1.id = n3.passage_id
         where n1.id = #{passageId}
     </select>
 </mapper>

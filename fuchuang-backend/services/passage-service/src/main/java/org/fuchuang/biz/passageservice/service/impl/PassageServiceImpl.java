@@ -1,22 +1,29 @@
 package org.fuchuang.biz.passageservice.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
+import org.fuchuang.biz.passageservice.dao.entity.PartitionDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageContentDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PartitionMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageContentMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
+import org.fuchuang.biz.passageservice.dto.req.PartitionReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
+import org.fuchuang.biz.passageservice.dto.resp.PartitionRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
+import org.fuchuang.biz.passageservice.remote.UserRemoteService;
 import org.fuchuang.biz.passageservice.service.PassageService;
+import org.fuchuang.biz.userservice.dto.resp.UserPersonalInfoRespDTO;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
+import org.fuchuang.framework.starter.convention.result.Result;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -42,6 +49,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
 
     private final PartitionMapper partitionMapper;
 
+    private final UserRemoteService userRemoteService;
+
     /**
      * 文章上传
      * @param requestParam 文章内容
@@ -50,6 +59,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
     @Transactional(rollbackFor = Exception.class)
     public void uploadPassage(PassageUploadReqDTO requestParam) {
        // 参数校验
+        // 文章上传的分区假设是定好了的用户在上传的时候只能选择分区
         if (requestParam == null || StringUtils.isEmpty(requestParam.getTitle()) || StringUtils.isEmpty(requestParam.getContent())
                 || requestParam.getPartition() == null || requestParam.getPartition() < 0) {
             throw new ClientException("传参有误！");
@@ -57,15 +67,20 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
 
         // 获取当前登录用户id
         String userId = UserContext.getUserId();
-        // 根据id获取用户名称
 
         // 新建文章实体类
         PassageDO passageDO = new PassageDO();
         // 属性拷贝
         BeanUtils.copyProperties(requestParam, passageDO);
+        log.info("文章实体详情：{}", passageDO);
+
         // 设置用户id
         passageDO.setAuthorId(Long.valueOf(userId));
-        // TODO 根据用户id查找并设置上传者名称
+
+        // 查找上传者名称
+        Result<UserPersonalInfoRespDTO> result =  userRemoteService.getUserInfo(userId);
+        // 设置上传者名称
+        passageDO.setAuthorName(result.getData().getUsername());
 
         // 将图片列表转换为用逗号分隔的字符串
         String imagesString = String.join(",", requestParam.getImages());
@@ -126,10 +141,18 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
             throw new ClientException("传参有误！");
         }
 
-        // 根据文章id连表查询细节
+        // 根据文章id连表查询细节和标签，正文内容可能过大连3个表查询会影响性能单独拆开查
         PassageDetailInfoRespDTO result = passageMapper.getPassageDetailInfo(Long.valueOf(passageId));
+        if (result == null) {
+            throw new ClientException("该文章不存在！");
+        }
+
+        // 单独查询文本内容表
+        String content = passageContentMapper.selectOne(Wrappers.<PassageContentDO>lambdaQuery()
+                .eq(PassageContentDO::getPassageId, passageId)).getContent();
 
         // 设置参数
+        result.setContent(content);
         Boolean isCheck = result.getIsCheck();
         result.setIsCheck(isCheck);
         result.setFakeRate(isCheck ? result.getFakeRate() : null);
@@ -140,6 +163,39 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         }
 
         return result;
+    }
+
+    /**
+     * 获取文章分区列表
+     */
+    @Override
+    public PartitionRespDTO getPartitionInfo() {
+        // 查询分区信息
+        PartitionDO partitionDO = partitionMapper.getPartitionInfo();
+
+        PartitionRespDTO result = new PartitionRespDTO();
+        result.setPartitionId(partitionDO.getId().toString());
+        result.setPartitionName(partitionDO.getName());
+        result.setCreateTime(partitionDO.getCreateTime());
+        result.setUpdateTime(partitionDO.getUpdateTime());
+
+        return result;
+    }
+
+    /**
+     * 新建分区
+     */
+    @Override
+    public void addNewPartition(PartitionReqDTO requestParam) {
+        PartitionDO partitionDO = PartitionDO.builder()
+                .name(requestParam.getPartitionName())
+                .build();
+
+        try {
+            partitionMapper.insert(partitionDO);
+        } catch (Exception e) {
+            throw new ClientException("新增分区失败！");
+        }
     }
 
     /**
