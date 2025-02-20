@@ -67,6 +67,12 @@ public class PassageDO extends BaseDO {
     private Long views;
 
     /**
+     * 文章评论数
+     */
+    @TableField("comment_counts")
+    private Long commentCounts;
+
+    /**
      * 文章图片地址(可能有多个图片，在数据库中用逗号隔开)
      */
     @TableField("images")
