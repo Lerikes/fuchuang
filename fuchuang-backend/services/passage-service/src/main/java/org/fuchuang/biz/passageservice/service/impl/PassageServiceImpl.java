@@ -8,18 +8,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
+import org.fuchuang.biz.passageservice.dao.entity.PartitionDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageContentDO;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PartitionMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageContentMapper;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
+import org.fuchuang.biz.passageservice.dto.req.PartitionReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PartitionRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
 import org.fuchuang.biz.passageservice.remote.UserRemoteService;
+import org.fuchuang.biz.passageservice.remote.dto.resp.UserPersonalInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.PassageService;
-import org.fuchuang.biz.userservice.dto.resp.UserPersonalInfoRespDTO;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.result.Result;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
@@ -140,8 +142,6 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         }
 
         // 根据文章id连表查询细节和标签，正文内容可能过大连3个表查询会影响性能单独拆开查
-        // 根据文章id连表查询细节
-        // todo  content 单独查
         PassageDetailInfoRespDTO result = passageMapper.getPassageDetailInfo(Long.valueOf(passageId));
         if (result == null) {
             throw new ClientException("该文章不存在！");
@@ -170,6 +170,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
      */
     @Override
     public PartitionRespDTO getPartitionInfo() {
+        // todo 在redis保存，因为前端查询很多
         // 查询分区信息
         PartitionDO partitionDO = partitionMapper.getPartitionInfo();
 

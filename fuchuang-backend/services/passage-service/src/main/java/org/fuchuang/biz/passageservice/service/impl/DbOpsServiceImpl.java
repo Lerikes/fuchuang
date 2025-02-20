@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
+import org.fuchuang.biz.passageservice.dao.entity.PassageLikeDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.service.DbOpsService;
 import org.fuchuang.framework.starter.bases.constant.RedisKeyConstant;
@@ -40,10 +41,8 @@ import java.util.concurrent.TimeUnit;
 public class DbOpsServiceImpl implements DbOpsService {
 
     private final StringRedisTemplate stringRedisTemplate;
-
-    private MongoTemplate mongoTemplate;
-
-    private PassageMapper passageMapper;
+    private final MongoTemplate mongoTemplate;
+    private final PassageMapper passageMapper;
 
     /**
      * 增加值的 Lua 脚本
@@ -73,8 +72,8 @@ public class DbOpsServiceImpl implements DbOpsService {
     /**
      * 安全的向 redis 的 set 中添加值(使用 lua 脚本)
      *
-     * @param key 视频id
-     * @param num 点赞数
+     * @param key key
+     * @param num 需要增加的值
      */
     @Override
     public void addIntSafely(String key, int num) {
@@ -91,7 +90,7 @@ public class DbOpsServiceImpl implements DbOpsService {
      * 将数据异步插入 mongoDB 中
      *
      * @param userId  用户id
-     * @param passageId 视频id
+     * @param passageId 文章id
      * @param type    操作类型(1 点赞 2收藏 3评论)
      * @param ops     添加到对应字段的参数
      */
@@ -105,33 +104,33 @@ public class DbOpsServiceImpl implements DbOpsService {
                 .and("videoId").is(passageId);
         Query query = Query.query(criteria);
         // 1.2查找点赞实体
-        VideoLike videoLike = mongoTemplate.findOne(query, VideoLike.class);
+        PassageLikeDO passageLikeDO = mongoTemplate.findOne(query, PassageLikeDO.class);
 
         // 2.检查是否存在
-        if (videoLike == null) {
+        if (passageLikeDO == null) {
             // 不存在，添加 userId 和 videoId
-            videoLike = new VideoLike();
-            videoLike.setUserId(userId);
-            videoLike.setVideoId(videoId);
+            passageLikeDO = new PassageLikeDO();
+            passageLikeDO.setUserId(Long.parseLong(userId));
+            passageLikeDO.setPassageId(Long.parseLong(passageId));
         }
 
         // 3.根据类型对相应的字段进行更新操作
         switch (type) {
             //点赞
             case 1:
-                videoLike.setIsLike((Integer) ops);
+                passageLikeDO.setIsLike((Integer) ops);
                 break;
             //收藏
             case 2:
-                videoLike.setIsCollect((Integer) ops);
+                passageLikeDO.setIsCollect((Integer) ops);
                 break;
             //评论
             case 3:
-                videoLike.setCommentList((List<String>) ops);
+                passageLikeDO.setCommentList((List<String>) ops);
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
-        mongoTemplate.save(videoLike);
+        mongoTemplate.save(passageLikeDO);
     }
 
     /**
@@ -146,8 +145,7 @@ public class DbOpsServiceImpl implements DbOpsService {
         // 刷新到redis，同时刷新likes,collects,comments字段
         stringRedisTemplate.opsForValue().set(RedisKeyConstant.STRING_LIKE_KEY + passageId,passageDO.getLikes().toString());
         stringRedisTemplate.opsForValue().set(RedisKeyConstant.STRING_COLLECT_KEY + passageId,passageDO.getCollection().toString());
-        // todo 评论数
-        //stringRedisTemplate.opsForValue().set(RedisKeyConstant.STRING_COMMENT_KEY + passageId,passageDO.getComments().toString());
+        stringRedisTemplate.opsForValue().set(RedisKeyConstant.STRING_COMMENT_KEY + passageId,passageDO.getCommentCounts().toString());
         return passageDO.getLikes();
     }
 
@@ -156,7 +154,7 @@ public class DbOpsServiceImpl implements DbOpsService {
      * 每 12 小时执行一次
      */
     @PostConstruct
-    @Scheduled(cron = "0 */ 720 * * * ?")
+    @Scheduled(cron = "0 0 */12 * * *")
     public void refresh() {
 //        Set<String> likeKeys = stringRedisTemplate.keys(VideoConstant.STRING_LIKE_KEY + '*');
 //        Set<String> collectKeys = stringRedisTemplate.keys(VideoConstant.STRING_COLLECT_KEY + '*');
@@ -272,21 +270,21 @@ public class DbOpsServiceImpl implements DbOpsService {
                     }
                     break;
                 case 2:
-                    // 更新评论数 todo
-//                    for (String commentKey : keys) {
-//                        // 获取 passageId
-//                        String sub = commentKey.substring(RedisKeyConstant.STRING_COLLECT_KEY.length());
-//                        long passageId = Long.parseLong(sub);
-//                        // 创建新的文章对象
-//                        PassageDO passageDO = new PassageDO();
-//                        passageDO.setId(passageId);
-//                        // 获取收藏数
-//                        String comments = stringRedisTemplate.opsForValue().get(commentKey);
-//                        long commentNum = Long.parseLong(comments == null ? "0" : comments);
-//                        passageDO.setCollection(commentNum);
-//                        // 更新数据库
-//                        videoMapper.updateById(video);
-//                    }
+                    // 更新评论数
+                    for (String commentKey : keys) {
+                        // 获取 passageId
+                        String sub = commentKey.substring(RedisKeyConstant.STRING_COLLECT_KEY.length());
+                        long passageId = Long.parseLong(sub);
+                        // 创建新的文章对象
+                        PassageDO passageDO = new PassageDO();
+                        passageDO.setId(passageId);
+                        // 获取收藏数
+                        String comments = stringRedisTemplate.opsForValue().get(commentKey);
+                        long commentNum = Long.parseLong(comments == null ? "0" : comments);
+                        passageDO.setCommentCounts(commentNum);
+                        // 更新数据库
+                        passageMapper.updateById(passageDO);
+                    }
                     break;
             }
         }

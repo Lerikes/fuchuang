@@ -61,12 +61,6 @@ public class PassageDO extends BaseDO {
     private Long collection;
 
     /**
-     * 文章观看次数
-     */
-    @TableField("views")
-    private Long views;
-
-    /**
      * 文章评论数
      */
     @TableField("comment_counts")
