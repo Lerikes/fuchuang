@@ -101,7 +101,7 @@ public class DbOpsServiceImpl implements DbOpsService {
         // 1.1封装查询条件
         Criteria criteria = Criteria
                 .where("userId").is(userId)
-                .and("videoId").is(passageId);
+                .and("passageId").is(passageId);
         Query query = Query.query(criteria);
         // 1.2查找点赞实体
         PassageLikeDO passageLikeDO = mongoTemplate.findOne(query, PassageLikeDO.class);
@@ -156,9 +156,6 @@ public class DbOpsServiceImpl implements DbOpsService {
     @PostConstruct
     @Scheduled(cron = "0 0 */12 * * *")
     public void refresh() {
-//        Set<String> likeKeys = stringRedisTemplate.keys(VideoConstant.STRING_LIKE_KEY + '*');
-//        Set<String> collectKeys = stringRedisTemplate.keys(VideoConstant.STRING_COLLECT_KEY + '*');
-//        Set<String> commentKeys = stringRedisTemplate.keys(VideoConstant.STRING_COMMENT_KEY + '*');
         Set<String> likeKeys = scanKeys(RedisKeyConstant.STRING_LIKE_KEY + '*');
         Set<String> collectKeys = scanKeys(RedisKeyConstant.STRING_COLLECT_KEY + '*');
         Set<String> commentKeys = scanKeys(RedisKeyConstant.STRING_COMMENT_KEY + '*');
