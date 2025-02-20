@@ -15,6 +15,7 @@ import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.dto.req.PassageUploadReqDTO;
 import org.fuchuang.biz.passageservice.dto.resp.FirstPassageInfoRespDTO;
 import org.fuchuang.biz.passageservice.dto.resp.PassageDetailInfoRespDTO;
+import org.fuchuang.biz.passageservice.remote.UserRemoteService;
 import org.fuchuang.biz.passageservice.service.PassageService;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
@@ -41,6 +42,8 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
     private final PassageContentMapper passageContentMapper;
 
     private final PartitionMapper partitionMapper;
+
+    private final UserRemoteService userRemoteService;
 
     /**
      * 文章上传
@@ -127,6 +130,7 @@ public class PassageServiceImpl extends ServiceImpl<PassageMapper, PassageDO> im
         }
 
         // 根据文章id连表查询细节
+        // todo  content 单独查
         PassageDetailInfoRespDTO result = passageMapper.getPassageDetailInfo(Long.valueOf(passageId));
 
         // 设置参数

@@ -189,11 +189,11 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>2.9.8</version>
         </dependency>
+
+        <!-- mongoDB 依赖 -->
         <dependency>
-            <groupId>org.fuchuang</groupId>
-            <artifactId>fuchuang-user-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
 
     </dependencies>
