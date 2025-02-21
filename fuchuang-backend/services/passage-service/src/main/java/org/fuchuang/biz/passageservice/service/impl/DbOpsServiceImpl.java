@@ -108,7 +108,7 @@ public class DbOpsServiceImpl implements DbOpsService {
 
         // 2.检查是否存在
         if (passageLikeDO == null) {
-            // 不存在，添加 userId 和 videoId
+            // 不存在，添加 userId 和 passageId
             passageLikeDO = new PassageLikeDO();
             passageLikeDO.setUserId(Long.parseLong(userId));
             passageLikeDO.setPassageId(Long.parseLong(passageId));
