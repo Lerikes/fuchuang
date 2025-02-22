@@ -5,6 +5,8 @@ import org.fuchuang.framework.starter.database.base.BaseDO;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 /**
  * mongo中文章评论
  */
@@ -13,7 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document("comment")
-public class CommentDO extends BaseDO {
+public class CommentDO {
 
     /**
      * 评论id
@@ -45,4 +47,19 @@ public class CommentDO extends BaseDO {
      * 支持多级评论
      */
     private Long parentId;
+
+    /**
+     * 评论时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 删除标志
+     */
+    private Integer delFlag;
 }

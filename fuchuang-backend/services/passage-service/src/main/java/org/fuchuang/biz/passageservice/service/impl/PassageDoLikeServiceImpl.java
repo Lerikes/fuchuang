@@ -130,30 +130,32 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
      */
     @Override
     public void doCollect(DoLikeReqDTO requestParam) {
-        //set集合的key
+        //收藏文章的用户集合的key
         String setKey= RedisKeyConstant.SET_COLLECT_KEY + requestParam.getPassageId();
 
-        //kv类型的key(key为passageId,value为点赞总数)
+        //kv类型的key(key为passageId,value为收藏总数)
         String strKey=RedisKeyConstant.STRING_COLLECT_KEY + requestParam.getPassageId();
 
-        //视频作者的点赞总数的key
+        //文章作者的收藏总数的key
         String userKey=RedisKeyConstant.USER_COLLECT_SUM + requestParam.getAuthorId();
 
         //获取userId
         String userId = UserContext.getUserId();
-        //当前用户收藏的视频集合key
+        //当前用户收藏的文章集合key
         String nowUserKey=RedisKeyConstant.USER_LIST_COLLECT_KEY + userId;
 
         //收藏操作
         StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+        // 构造keys
+        List<String> keys = Arrays.asList(setKey, strKey, userKey, nowUserKey);
+        String passageId = requestParam.getPassageId();
         if(requestParam.getType() == ParamConstant.DO_LIKE_OR_COLLECTION_TYPE){
             //添加到redis，以set方式存储，key为passageId，value为userId
             if(Boolean.FALSE.equals(stringRedisTemplate.opsForSet().isMember(setKey, userId))){
-                //添加到redis
-                stringRedisTemplate.opsForSet().add(setKey, userId);
-                stringRedisTemplate.opsForList().leftPush(nowUserKey,String.valueOf(requestParam.getPassageId()));
-                // TODO redis相关数据 +1
+                // todo 先添加到mongoDB
 
+                //添加到redis
+                stringRedisTemplate.execute(passageCollectScript, keys, userId, passageId);
             }
             else {
                 throw new ClientException("重复收藏！");
@@ -161,13 +163,13 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
         }
         //取消收藏
         else {
-            //判断是否点过赞
+            //判断是否收藏过
             if(Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(setKey, userId))){
-                //取消点赞
-                stringRedisTemplate.opsForSet().remove(setKey, userId);
-                stringRedisTemplate.opsForList().remove(nowUserKey,1,String.valueOf(requestParam.getPassageId()));
-                // TODO redis相关数据 -1
+                //取消收藏
+                // todo 逻辑删除mongo中的数据
 
+                // 删除redis中
+                stringRedisTemplate.execute(passageUnCollectScript, keys, userId, passageId);
             }
             else {
                 throw new ClientException("重复取消！");
