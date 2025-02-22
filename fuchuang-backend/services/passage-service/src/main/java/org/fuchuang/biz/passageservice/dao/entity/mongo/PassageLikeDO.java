@@ -1,9 +1,7 @@
-package org.fuchuang.biz.passageservice.dao.entity;
+package org.fuchuang.biz.passageservice.dao.entity.mongo;
 
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
 
 /**
  * mongoDB中文章点赞信息
@@ -39,9 +37,4 @@ public class PassageLikeDO {
      * 0 否
      */
     private Integer isCollect;
-
-    /**
-     * 评论
-     */
-    private List<String> commentList;
 }

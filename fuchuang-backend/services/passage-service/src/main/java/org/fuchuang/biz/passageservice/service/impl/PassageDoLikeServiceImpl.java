@@ -4,18 +4,20 @@ import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.passageservice.common.constant.ParamConstant;
-import org.fuchuang.biz.passageservice.dao.entity.CommentDO;
-import org.fuchuang.biz.passageservice.dao.mapper.CommentMapper;
+import org.fuchuang.biz.passageservice.dao.entity.mongo.CommentDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
+import org.fuchuang.biz.passageservice.dao.mapper.mongo.CommentRepository;
 import org.fuchuang.biz.passageservice.dto.req.CommentReqDTO;
 import org.fuchuang.biz.passageservice.dto.req.DoLikeReqDTO;
 import org.fuchuang.biz.passageservice.remote.UserRemoteService;
+import org.fuchuang.biz.passageservice.remote.dto.resp.UserPersonalInfoRespDTO;
 import org.fuchuang.biz.passageservice.service.DbOpsService;
 import org.fuchuang.biz.passageservice.service.PassageDoLikeService;
 import org.fuchuang.framework.starter.bases.constant.RedisKeyConstant;
 import org.fuchuang.framework.starter.cache.DistributedCache;
 import org.fuchuang.framework.starter.convention.exception.ClientException;
 import org.fuchuang.framework.starter.convention.exception.ServiceException;
+import org.fuchuang.framework.starter.convention.result.Result;
 import org.fuchuang.frameworks.starter.user.core.UserContext;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -37,11 +39,14 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
 
     private final PassageMapper passageMapper;
 
-    private final CommentMapper commentMapper;
-
     private final UserRemoteService userRemoteService;
 
+    private final CommentRepository commentRepository;
+
     private final DefaultRedisScript<Long> passageLikeScript;
+    private final DefaultRedisScript<Long> passageUnLikeScript;
+    private final DefaultRedisScript<Long> passageCollectScript;
+    private final DefaultRedisScript<Long> passageUnCollectScript;
 
     private final DbOpsService dbOpsService;
 
@@ -72,6 +77,7 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
         // 封装keys
         List<String> keys = Arrays.asList(setKey, strKey, userKey, nowUserKey);
         StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+        String passageId = requestParam.getPassageId();
         // 进行点赞操作
         if (requestParam.getType() == ParamConstant.DO_LIKE_OR_COLLECTION_TYPE) {
             // 查询用户是否点过赞
@@ -79,7 +85,6 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
             if (Boolean.FALSE.equals(isLiked)) {
                 // 添加到 redis
                 // redis数据加一
-                String passageId = requestParam.getPassageId();
                 try {
                     // 执行lua脚本
                     stringRedisTemplate.execute(passageLikeScript, keys, userId, passageId);
@@ -92,23 +97,30 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
                         throw new ServiceException("lua脚本执行失败");
                     }
                 }
-                // 异步添加到mongoDB
-                dbOpsService.insertIntoMongoDB(userId, passageId, ParamConstant.DO_LIKE_OR_COLLECTION_TYPE, 1);
             } else {
                 throw new ClientException("请勿重复点赞");
             }
         } // 取消点赞
         else {
+            // 取消点赞
             // 判断是否点过赞
-            if(Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(setKey, String.valueOf(userId)))){
-                //取消点赞
-                stringRedisTemplate.opsForSet().remove(setKey, userId);
-                stringRedisTemplate.opsForSet().remove(nowUserKey,String.valueOf(requestParam.getPassageId()));
-                // TODO redis相关数据 -1
-
-            }
-            else {
-                throw new ClientException("重复取消！");
+            Boolean isLiked = stringRedisTemplate.opsForValue().getBit(setKey, Long.parseLong(userId));
+            if (Boolean.TRUE.equals(isLiked)) {
+                // 如果点过赞
+                // 删除数据
+                // redis数据减一
+                try {
+                    // 执行lua脚本
+                    stringRedisTemplate.execute(passageLikeScript, keys, userId, passageId);
+                } catch (Exception e) {
+                    if (e instanceof RedisSystemException) {
+                        log.error("重复取消");
+                        throw new ClientException("请勿重复取消");
+                    } else {
+                        log.error("lua脚本执行失败: {}", e.toString());
+                        throw new ServiceException("lua脚本执行失败");
+                    }
+                }
             }
         }
     }
@@ -167,26 +179,37 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
      * 评论
      */
     @Override
-    public void doComment(CommentReqDTO commentReqDTO) {
+    public void doComment(CommentReqDTO requestParam) {
+        // 参数校验
+        if(requestParam == null || StrUtil.isBlank(requestParam.getPassageId()) || StrUtil.isBlank(requestParam.getContent())) {
+            throw new ClientException("参数有误！");
+        }
+
         // 得到userId
         String userId = UserContext.getUserId();
 
-        // 视频的评论总数的key
-        String key = RedisKeyConstant.STRING_COMMENT_KEY + commentReqDTO.getPassageId();
-
-        // TODO redis数据 +1
-
         //得到当前用户信息
+        Result<UserPersonalInfoRespDTO> result = userRemoteService.getUserInfo(userId);
+        if(result == null || !result.getCode().equals(Result.SUCCESS_CODE)) {
+            throw new ClientException("获取用户信息失败！");
+        }
+        UserPersonalInfoRespDTO userInfo = result.getData();
 
-        //得到评论，插入数据库
-        CommentDO comment = CommentDO.builder()
+        //得到评论，插入mongoDB
+        CommentDO commentDO = CommentDO.builder()
                 .userId(Long.valueOf(userId))
-                .content(commentReqDTO.getContent())
-                .passageId(Long.valueOf(commentReqDTO.getPassageId()))
-                .parentId(commentReqDTO.getParentId() == null ? 0L : Long.parseLong(commentReqDTO.getParentId()))
+                .username(userInfo.getUsername())
+                .content(requestParam.getContent())
+                .passageId(Long.valueOf(requestParam.getPassageId()))
+                .parentId(StrUtil.isBlank(requestParam.getParentId()) ? 0L : Long.parseLong(requestParam.getParentId()))
                 .build();
         try {
-            commentMapper.insert(comment);
+            commentRepository.save(commentDO);
+
+            // 插入成功后增加redis中评论的数量
+            String key = RedisKeyConstant.STRING_COMMENT_KEY + requestParam.getPassageId();
+            StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
+            stringRedisTemplate.opsForValue().increment(key);
         } catch (Exception e) {
             throw new ClientException("评论插入有误！");
         }

@@ -22,4 +22,40 @@ public class RedisScriptConfiguration {
         redisScript.setResultType(Long.class);
         return redisScript;
     }
+
+    /**
+     * 文章收藏脚本
+     * @return DefaultRedisScript<Long>
+     */
+    @Bean
+    public DefaultRedisScript<Long> passageCollectScript() {
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        redisScript.setLocation(new ClassPathResource("lua/collect.lua"));
+        redisScript.setResultType(Long.class);
+        return redisScript;
+    }
+
+    /**
+     * 文章取消点赞脚本
+     * @return DefaultRedisScript<Long>
+     */
+    @Bean
+    public DefaultRedisScript<Long> passageUnLikeScript() {
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        redisScript.setLocation(new ClassPathResource("lua/unlike.lua"));
+        redisScript.setResultType(Long.class);
+        return redisScript;
+    }
+
+    /**
+     * 文章取消收藏脚本
+     * @return DefaultRedisScript<Long>
+     */
+    @Bean
+    public DefaultRedisScript<Long> passageUnCollectScript() {
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        redisScript.setLocation(new ClassPathResource("lua/uncollect.lua"));
+        redisScript.setResultType(Long.class);
+        return redisScript;
+    }
 }

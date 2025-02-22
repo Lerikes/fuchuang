@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fuchuang.biz.passageservice.dao.entity.PassageDO;
-import org.fuchuang.biz.passageservice.dao.entity.PassageLikeDO;
+import org.fuchuang.biz.passageservice.dao.entity.mongo.PassageLikeDO;
 import org.fuchuang.biz.passageservice.dao.mapper.PassageMapper;
 import org.fuchuang.biz.passageservice.service.DbOpsService;
 import org.fuchuang.framework.starter.bases.constant.RedisKeyConstant;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -124,9 +123,6 @@ public class DbOpsServiceImpl implements DbOpsService {
             case 2:
                 passageLikeDO.setIsCollect((Integer) ops);
                 break;
-            //评论
-            case 3:
-                passageLikeDO.setCommentList((List<String>) ops);
             default:
                 throw new IllegalStateException("Unexpected value: " + type);
         }
