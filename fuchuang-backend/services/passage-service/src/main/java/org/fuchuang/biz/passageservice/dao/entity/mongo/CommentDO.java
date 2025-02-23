@@ -14,14 +14,14 @@ import java.util.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Document("comment")
+@Document(collection = "comment")
 public class CommentDO {
 
     /**
      * 评论id
      */
     @Id
-    private Long id;
+    private String id;
 
     /**
      * 对应文章id
