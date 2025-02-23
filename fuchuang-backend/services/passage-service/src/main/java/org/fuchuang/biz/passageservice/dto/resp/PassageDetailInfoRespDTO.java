@@ -74,10 +74,10 @@ public class PassageDetailInfoRespDTO {
     private Long collection;
 
     /**
-     * 观看次数
+     * 评论数
      */
-    @Schema(description = "观看次数")
-    private Long views;
+    @Schema(description = "评论数")
+    private Long commentCounts;
 
     /**
      * 文章创建时间

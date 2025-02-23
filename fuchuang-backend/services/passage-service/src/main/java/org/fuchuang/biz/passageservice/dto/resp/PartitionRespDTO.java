@@ -9,25 +9,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 一级页面获取返回参数
+ * 文章分区获取返回参数
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "一级页面获取返回参数")
-public class FirstPassageInfoRespDTO {
-
-    /**
-     * 文章id
-     */
-    @Schema(description = "文章id")
-    private String passageId;
-
-    /**
-     * 文章标题
-     */
-    @Schema(description = "文章标题")
-    private String title;
+@Schema(description = "文章分区获取返回参数")
+public class PartitionRespDTO {
 
     /**
      * 分区id
@@ -38,13 +26,20 @@ public class FirstPassageInfoRespDTO {
     /**
      * 分区名称
      */
-    @Schema(description = "文章id")
+    @Schema(description = "分区名称")
     private String partitionName;
 
     /**
-     * 文章创建时间
+     * 分区创建时间
      */
-    @Schema(description = "文章创建时间")
+    @Schema(description = "分区创建时间")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
+
+    /**
+     * 分区更新时间
+     */
+    @Schema(description = "分区更新时间")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
 }

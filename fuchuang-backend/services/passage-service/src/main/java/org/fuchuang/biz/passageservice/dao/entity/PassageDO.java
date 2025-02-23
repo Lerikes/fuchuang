@@ -45,8 +45,8 @@ public class PassageDO extends BaseDO {
     /**
      * 文章作者用户
      */
-    @TableField("user_name")
-    private String userName;
+    @TableField("author_name")
+    private String authorName;
 
     /**
      * 文章点赞数
@@ -61,10 +61,10 @@ public class PassageDO extends BaseDO {
     private Long collection;
 
     /**
-     * 文章观看次数
+     * 文章评论数
      */
-    @TableField("views")
-    private Long views;
+    @TableField("comment_counts")
+    private Long commentCounts;
 
     /**
      * 文章图片地址(可能有多个图片，在数据库中用逗号隔开)
