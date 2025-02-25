@@ -142,6 +142,12 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void doCollect(DoLikeReqDTO requestParam) {
+
+        // 参数检验
+        if(requestParam == null || StrUtil.isBlank(requestParam.getPassageId()) || StrUtil.isBlank(requestParam.getAuthorId())){
+            throw new ClientException("参数有误");
+        }
+
         //收藏文章的用户集合的key
         String setKey= RedisKeyConstant.SET_COLLECT_KEY + requestParam.getPassageId();
 
@@ -153,7 +159,7 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
 
         //获取userId
         String userIdStr = UserContext.getUserId();
-        long userId = Long.parseLong(userIdStr);
+        Long userId = Long.parseLong(userIdStr);
         //当前用户收藏的文章集合key
         String nowUserKey=RedisKeyConstant.USER_LIST_COLLECT_KEY + userIdStr;
 

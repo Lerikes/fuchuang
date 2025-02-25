@@ -8,16 +8,28 @@
 --ARGV[1] 当前用户的id
 --ARGV[2] 文章的id
 
--- 1.删除数据
-if (redis.call('srem',KEYS[1],ARGV[1]) == 0) then
+-- 1. 删除集合中的用户
+if redis.call('srem', KEYS[1], ARGV[1]) == 0 then
     redis.error_reply("already uncollect!")
 end
 
--- 2.减少文章收藏数量
-redis.call('decr',KEYS[2])
+-- 2. 安全减少文章收藏数,防止出现小于0的情况
+local count = tonumber(redis.call('get', KEYS[2])) or 0
+if count > 0 then
+    redis.call('set', KEYS[2], count - 1)  -- 使用计算后的值直接设置
+else
+    redis.call('set', KEYS[2], 0)          -- 确保不会出现负数
+end
 
--- 3.减少文章作者收藏总数
-redis.call('decr',KEYS[3])
+-- 3. 安全减少作者收藏总数
+local authorTotal = tonumber(redis.call('get', KEYS[3])) or 0
+if authorTotal > 0 then
+    redis.call('set', KEYS[3], authorTotal - 1)
+else
+    redis.call('set', KEYS[3], 0)
+end
 
--- 4.从当前用户的收藏文章集合中删除
-redis.call('srem',KEYS[4],ARGV[2])
+-- 4. 从用户收藏集合中删除文章
+redis.call('srem', KEYS[4], ARGV[2])
+
+return 1
