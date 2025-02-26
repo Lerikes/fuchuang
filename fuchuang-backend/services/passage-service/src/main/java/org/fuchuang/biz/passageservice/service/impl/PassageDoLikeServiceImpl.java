@@ -90,9 +90,9 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
         StringRedisTemplate stringRedisTemplate = (StringRedisTemplate) distributedCache.getInstance();
         String passageId = requestParam.getPassageId();
         // 进行点赞操作
+        Boolean isLiked = stringRedisTemplate.opsForValue().getBit(setKey, Long.parseLong(userId));
         if (requestParam.getType() == ParamConstant.DO_LIKE_OR_COLLECTION_TYPE) {
             // 查询用户是否点过赞
-            Boolean isLiked = stringRedisTemplate.opsForValue().getBit(setKey, Long.parseLong(userId));
             if (Boolean.FALSE.equals(isLiked)) {
                 // 添加到 redis
                 // redis数据加一
@@ -115,7 +115,6 @@ public class PassageDoLikeServiceImpl implements PassageDoLikeService {
         else {
             // 取消点赞
             // 判断是否点过赞
-            Boolean isLiked = stringRedisTemplate.opsForValue().getBit(setKey, Long.parseLong(userId));
             if (Boolean.TRUE.equals(isLiked)) {
                 // 如果点过赞
                 // 删除数据
